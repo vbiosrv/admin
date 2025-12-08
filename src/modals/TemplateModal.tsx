@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Modal from '../components/Modal';
-import { Save, X, Trash2, Play } from 'lucide-react';
+import { Save, X, Trash2, Play, Maximize2, Minimize2, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Editor from '@monaco-editor/react';
 import JsonEditor from '../components/JsonEditor';
@@ -8,6 +8,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import TemplateTestModal from './TemplateTestModal';
 import { shm_request } from '../lib/shm_request';
 import { useThemeStore } from '../store/themeStore';
+import TemplateSidebar from '../components/TemplateEditor/TemplateSidebar';
 
 interface TemplateModalProps {
   open: boolean;
@@ -33,16 +34,82 @@ export default function TemplateModal({
   const editorRef = useRef<any>(null);
   const { resolvedTheme } = useThemeStore();
   const [testModalOpen, setTestModalOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [tabs, setTabs] = useState<Array<{id: string, template: any, hasUnsavedChanges: boolean}>>([]);
+  const [activeTabId, setActiveTabId] = useState<string | null>(null);
+  const [confirmCloseTabOpen, setConfirmCloseTabOpen] = useState(false);
+  const [tabToClose, setTabToClose] = useState<string | null>(null);
+
+  // Загрузка табов из localStorage при монтировании
+  useEffect(() => {
+    const savedTabs = localStorage.getItem('templateEditorTabs');
+    if (savedTabs) {
+      try {
+        const parsed = JSON.parse(savedTabs);
+        if (parsed.tabs && parsed.tabs.length > 0) {
+          setTabs(parsed.tabs);
+          setActiveTabId(parsed.activeTabId);
+          setIsMinimized(true);
+        }
+      } catch (e) {
+        console.error('Error loading saved tabs:', e);
+      }
+    }
+  }, []);
+
+  // Сохранение табов в localStorage
+  useEffect(() => {
+    if (tabs.length > 0) {
+      localStorage.setItem('templateEditorTabs', JSON.stringify({ tabs, activeTabId }));
+    } else {
+      localStorage.removeItem('templateEditorTabs');
+    }
+  }, [tabs, activeTabId]);
 
   // Загрузка данных шаблона с сервера
   useEffect(() => {
     if (open && data?.id) {
+      // Разминимизируем если был свернут
+      if (isMinimized) {
+        setIsMinimized(false);
+        setIsFullscreen(true);
+      }
+      
+      // Проверяем есть ли уже такой таб
+      const existingTab = tabs.find(t => t.template.id === data.id);
+      if (existingTab) {
+        // Просто переключаемся на него в fullscreen
+        setIsFullscreen(true);
+        setActiveTabId(existingTab.id);
+        setFormData({ ...existingTab.template, is_add: 0 });
+        detectLanguage(existingTab.template.data || '');
+        return;
+      }
+      
+      // Открываем в fullscreen только если уже есть табы
+      if (tabs.length > 0) {
+        setIsFullscreen(true);
+      } else {
+        setIsFullscreen(false); // Первый таб - обычный режим
+      }
+      
+      // Загружаем новый шаблон
       setLoading(true);
       shm_request(`/shm/v1/admin/template?id=${data.id}`)
         .then(res => {
           const templateData = res.data?.[0] || res.data;
           setFormData({ ...templateData, is_add: 0 });
           detectLanguage(templateData.data || '');
+          
+          // Добавляем к существующим табам
+          const newTab = {
+            id: templateData.id,
+            template: templateData,
+            hasUnsavedChanges: false
+          };
+          setTabs(prev => [...prev, newTab]);
+          setActiveTabId(templateData.id);
         })
         .catch(err => {
           console.error('Ошибка загрузки шаблона:', err);
@@ -51,10 +118,27 @@ export default function TemplateModal({
         })
         .finally(() => setLoading(false));
     } else if (open && !data?.id) {
+      // Разминимизируем если был свернут
+      if (isMinimized) {
+        setIsMinimized(false);
+        setIsFullscreen(true);
+      } else if (tabs.length > 0) {
+        setIsFullscreen(true);
+      } else {
+        setIsFullscreen(false); // Первый таб - обычный режим
+      }
+      
       setFormData({ is_add: 1, data: '', settings: {} });
       setEditorLanguage('plaintext');
+      const newTab = {
+        id: 'new-' + Date.now(),
+        template: { is_add: 1, data: '', settings: {} },
+        hasUnsavedChanges: false
+      };
+      setTabs(prev => [...prev, newTab]);
+      setActiveTabId(newTab.id);
     }
-  }, [data, open]);
+  }, [open, data?.id]);
 
   const detectLanguage = (content: string) => {
     if (!content) {
@@ -102,6 +186,108 @@ export default function TemplateModal({
 
   const handleEditorChange = (value: string | undefined) => {
     handleChange('data', value || '');
+    // Помечаем таб как изменённый и обновляем данные
+    if (activeTabId) {
+      setTabs(prev => prev.map(t => 
+        t.id === activeTabId ? { 
+          ...t, 
+          hasUnsavedChanges: true,
+          template: { ...t.template, data: value || '' }
+        } : t
+      ));
+    }
+  };
+  
+  const handleTemplateSelect = (template: any) => {
+    // Проверяем есть ли уже такой таб
+    const existingTab = tabs.find(t => t.template.id === template.id);
+    if (existingTab) {
+      setActiveTabId(existingTab.id);
+      // Загружаем свежие данные
+      setLoading(true);
+      shm_request(`/shm/v1/admin/template?id=${template.id}`)
+        .then(res => {
+          const templateData = res.data?.[0] || res.data;
+          setFormData({ ...templateData, is_add: 0 });
+          detectLanguage(templateData.data || '');
+        })
+        .catch(err => {
+          console.error('Ошибка загрузки шаблона:', err);
+          toast.error('Ошибка загрузки шаблона');
+        })
+        .finally(() => setLoading(false));
+      return;
+    }
+    
+    // Загружаем новый шаблон
+    setLoading(true);
+    shm_request(`/shm/v1/admin/template?id=${template.id}`)
+      .then(res => {
+        const templateData = res.data?.[0] || res.data;
+        const newTab = {
+          id: templateData.id,
+          template: templateData,
+          hasUnsavedChanges: false
+        };
+        setTabs(prev => [...prev, newTab]);
+        setActiveTabId(templateData.id);
+        setFormData({ ...templateData, is_add: 0 });
+        detectLanguage(templateData.data || '');
+      })
+      .catch(err => {
+        console.error('Ошибка загрузки шаблона:', err);
+        toast.error('Ошибка загрузки шаблона');
+      })
+      .finally(() => setLoading(false));
+  };
+  
+  const handleTabClose = (tabId: string) => {
+    const tab = tabs.find(t => t.id === tabId);
+    if (tab?.hasUnsavedChanges) {
+      setTabToClose(tabId);
+      setConfirmCloseTabOpen(true);
+      return;
+    }
+    
+    // Закрываем таб без подтверждения
+    closeTabById(tabId);
+  };
+  
+  const closeTabById = (tabId: string) => {
+    const newTabs = tabs.filter(t => t.id !== tabId);
+    setTabs(newTabs);
+    
+    if (activeTabId === tabId) {
+      if (newTabs.length > 0) {
+        const newActiveTab = newTabs[newTabs.length - 1];
+        setActiveTabId(newActiveTab.id);
+        
+        // Если это новый шаблон
+        if (newActiveTab.id.startsWith('new-')) {
+          setFormData({ ...newActiveTab.template, is_add: 1 });
+          detectLanguage(newActiveTab.template.data || '');
+        } else {
+          // Загружаем существующий шаблон
+          setLoading(true);
+          shm_request(`/shm/v1/admin/template?id=${newActiveTab.template.id}`)
+            .then(res => {
+              const templateData = res.data?.[0] || res.data;
+              setFormData({ ...templateData, is_add: 0 });
+              detectLanguage(templateData.data || '');
+            })
+            .catch(err => {
+              console.error('Ошибка загрузки шаблона:', err);
+              toast.error('Ошибка загрузки шаблона');
+            })
+            .finally(() => setLoading(false));
+        }
+      } else {
+        // Последний таб закрыт - минимизируем вместо полного закрытия
+        setActiveTabId(null);
+        setIsMinimized(true);
+        setIsFullscreen(false);
+      }
+    }
   };
   const handleSave = async () => {
     if (!formData.id) {
@@ -113,6 +299,17 @@ export default function TemplateModal({
     try {
       await onSave(formData);
       toast.success('Шаблон сохранён');
+      
+      // Сбрасываем флаг несохранённых изменений
+      if (activeTabId) {
+        setTabs(prev => prev.map(t => 
+          t.id === activeTabId ? { 
+            ...t, 
+            hasUnsavedChanges: false,
+            template: formData
+          } : t
+        ));
+      }
     } catch (error) {
       console.error('Ошибка сохранения:', error);
       toast.error('Ошибка сохранения');
@@ -169,10 +366,133 @@ export default function TemplateModal({
 
   const isAdd = formData.is_add === 1;
 
+  const [confirmCloseAllOpen, setConfirmCloseAllOpen] = useState(false);
+
+  const handleClose = () => {
+    // Проверяем есть ли несохранённые изменения
+    const hasUnsaved = tabs.some(t => t.hasUnsavedChanges);
+    if (hasUnsaved) {
+      setConfirmCloseAllOpen(true);
+      return;
+    }
+    
+    // Очищаем все табы
+    closeAllTabs();
+  };
+  
+  const closeAllTabs = () => {
+    setTabs([]);
+    setActiveTabId(null);
+    localStorage.removeItem('templateEditorTabs');
+    onClose();
+  };
+  
+  // Обработчик закрытия модалки (крестик в обычном режиме)
+  const handleModalClose = () => {
+    // Если один таб и мы в обычном режиме - закрываем полностью
+    if (tabs.length === 1 && !isFullscreen) {
+      const hasUnsaved = tabs.some(t => t.hasUnsavedChanges);
+      if (hasUnsaved) {
+        setConfirmCloseAllOpen(true);
+        return;
+      }
+      closeAllTabs();
+    } 
+    // Если несколько табов в обычном режиме - удаляем активный и минимизируем
+    else if (tabs.length > 1 && !isFullscreen) {
+      const activeTab = tabs.find(t => t.id === activeTabId);
+      if (activeTab?.hasUnsavedChanges) {
+        setTabToClose(activeTabId!);
+        setConfirmCloseTabOpen(true);
+        return;
+      }
+      // Удаляем активный таб
+      closeTabById(activeTabId!);
+      setIsMinimized(true);
+      setIsFullscreen(false);
+    }
+    // Если нет табов - просто закрываем
+    else {
+      onClose();
+    }
+  };
+
+  const handleCloseTab = () => {
+    // Если один таб - проверяем несохраненные изменения
+    if (tabs.length === 1) {
+      const hasUnsaved = tabs.some(t => t.hasUnsavedChanges);
+      if (hasUnsaved) {
+        setTabToClose(tabs[0].id);
+        setConfirmCloseTabOpen(true);
+        return;
+      }
+      // Закрываем таб полностью и очищаем localStorage
+      setTabs([]);
+      setActiveTabId(null);
+      localStorage.removeItem('templateEditorTabs');
+      setIsMinimized(false); // Сбрасываем минимизацию
+      setIsFullscreen(false);
+      onClose(); // Закрываем модалку полностью
+      return;
+    }
+    
+    // Иначе - закрываем только активный таб
+    if (activeTabId) {
+      handleTabClose(activeTabId);
+    }
+  };
+
   const renderFooter = () => (
     <div className="flex justify-between items-center w-full">
-      <div>
-        {!isAdd && onDelete && (
+      <div className="flex gap-2">
+        {isFullscreen && (
+          <>
+            {!isAdd && onDelete && (
+              <button
+                onClick={() => setConfirmDeleteOpen(true)}
+                className="px-4 py-2 rounded flex items-center gap-2 btn-danger"
+                style={{
+                  backgroundColor: 'var(--theme-button-danger-bg)',
+                  color: 'var(--theme-button-danger-text)',
+                  border: '1px solid var(--theme-button-danger-border)',
+                }}
+              >
+                <Trash2 className="w-4 h-4" />
+                Удалить
+              </button>
+            )}
+            <button
+              onClick={() => {
+                setIsMinimized(true);
+                setIsFullscreen(false);
+              }}
+              className="px-4 py-2 rounded flex items-center gap-2"
+              title="Свернуть"
+              style={{
+                backgroundColor: 'var(--theme-button-secondary-bg)',
+                color: 'var(--theme-button-secondary-text)',
+                border: '1px solid var(--theme-button-secondary-border)',
+              }}
+            >
+              <Minimize2 className="w-4 h-4" />
+              Свернуть
+            </button>
+            <button
+              onClick={() => setIsFullscreen(false)}
+              className="px-4 py-2 rounded flex items-center gap-2"
+              title="Обычный режим"
+              style={{
+                backgroundColor: 'var(--theme-button-secondary-bg)',
+                color: 'var(--theme-button-secondary-text)',
+                border: '1px solid var(--theme-button-secondary-border)',
+              }}
+            >
+              <Maximize2 className="w-4 h-4" style={{ transform: 'rotate(180deg)' }} />
+              Обычный режим
+            </button>
+          </>
+        )}
+        {!isFullscreen && !isAdd && onDelete && (
           <button
             onClick={() => setConfirmDeleteOpen(true)}
             className="px-4 py-2 rounded flex items-center gap-2 btn-danger"
@@ -186,20 +506,23 @@ export default function TemplateModal({
             Удалить
           </button>
         )}
+        {!isFullscreen && (
+          <button
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            className="px-4 py-2 rounded flex items-center gap-2"
+            title={isFullscreen ? 'Обычный режим' : 'На весь экран'}
+            style={{
+              backgroundColor: 'var(--theme-button-secondary-bg)',
+              color: 'var(--theme-button-secondary-text)',
+              border: '1px solid var(--theme-button-secondary-border)',
+            }}
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            {isFullscreen ? 'Обычный' : 'На весь экран'}
+          </button>
+        )}
       </div>
       <div className="flex gap-2">
-        <button
-          onClick={onClose}
-          className="px-4 py-2 rounded flex items-center gap-2"
-          style={{
-            backgroundColor: 'var(--theme-button-secondary-bg)',
-            color: 'var(--theme-button-secondary-text)',
-            border: '1px solid var(--theme-button-secondary-border)',
-          }}
-        >
-          <X className="w-4 h-4" />
-          Отмена
-        </button>
         <button
           onClick={handleSaveAndTest}
           disabled={saving || !formData.id || isAdd}
@@ -229,21 +552,292 @@ export default function TemplateModal({
     </div>
   );
 
+  // Отображаем плавающую кнопку если минимизировано и есть табы
+  if (isMinimized && tabs.length > 0) {
+    const hasUnsaved = tabs.some(t => t.hasUnsavedChanges);
+    return (
+      <button
+        onClick={() => {
+          setIsMinimized(false);
+          setIsFullscreen(true);
+        }}
+        className="fixed bottom-6 right-6 rounded-full shadow-lg px-4 py-3 flex items-center gap-2 hover:scale-105 transition-transform btn-primary"
+        style={{
+          backgroundColor: 'var(--accent-primary)',
+          color: 'var(--accent-text)',
+          zIndex: 9998,
+        }}
+        title="Открыть редактор шаблонов"
+      >
+        {hasUnsaved && (
+          <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
+        )}
+        <FileText className="w-5 h-5" />
+        <span className="font-medium">Открытые шаблоны ({tabs.length})</span>
+      </button>
+    );
+  }
+  
+  // Если минимизировано и табов нет - ничего не показываем
+  if (isMinimized && tabs.length === 0) {
+    return null;
+  }
+
   return (
     <>
-      <Modal
-        open={open}
-        onClose={onClose}
-        title={isAdd ? 'Создание шаблона' : `Редактирование шаблона: ${formData.id || ''}`}
-        footer={renderFooter()}
-        size="xl"
-      >
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      {isFullscreen ? (
+        <div
+          className="fixed inset-0 flex flex-col"
+          style={{
+            backgroundColor: 'var(--theme-bg)',
+            zIndex: 9999,
+          }}
+        >
+          {/* Header */}
+          <div
+            className="flex items-center justify-between px-4 py-3 border-b"
+            style={{
+              backgroundColor: 'var(--theme-header-bg)',
+              borderColor: 'var(--theme-border)',
+            }}
+          >
+            <h2 className="text-lg font-semibold" style={{ color: 'var(--theme-content-text)' }}>
+              {isAdd ? 'Создание шаблона' : `Редактирование: ${formData.id || ''}`}
+            </h2>
+          {/* Tabs */}
+          {tabs.length > 1 && (
+            <div
+              className="flex gap-1 px-1 overflow-x-auto"
+              style={{
+                backgroundColor: 'var(--theme-header-bg)',
+                borderColor: 'var(--theme-border)',
+              }}
+            >
+              {tabs.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    if (activeTabId !== tab.id) {
+                      setActiveTabId(tab.id);
+                      const templateToLoad = tab.template.id || tab.id;
+                      
+                      // Если это новый шаблон
+                      if (tab.id.startsWith('new-')) {
+                        setFormData({ ...tab.template, is_add: 1 });
+                        detectLanguage(tab.template.data || '');
+                      } else {
+                        // Загружаем существующий шаблон
+                        setLoading(true);
+                        shm_request(`/shm/v1/admin/template?id=${templateToLoad}`)
+                          .then(res => {
+                            const templateData = res.data?.[0] || res.data;
+                            setFormData({ ...templateData, is_add: 0 });
+                            detectLanguage(templateData.data || '');
+                            // Обновляем данные таба
+                            setTabs(prev => prev.map(t => 
+                              t.id === tab.id ? { ...t, template: templateData } : t
+                            ));
+                          })
+                          .catch(err => {
+                            console.error('Ошибка загрузки шаблона:', err);
+                            toast.error('Ошибка загрузки шаблона');
+                          })
+                          .finally(() => setLoading(false));
+                      }
+                    }
+                  }}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded text-sm whitespace-nowrap"
+                  style={{
+                    backgroundColor: activeTabId === tab.id ? 'var(--theme-content-bg)' : 'var(--theme-header-bg)',
+                    color: activeTabId === tab.id ? 'var(--theme-content-text)' : 'var(--theme-content-text-muted)',
+                    border: `1px solid ${activeTabId === tab.id ? 'var(--theme-border)' : 'var(--theme-border)'}`,
+                  }}
+                >
+                  {tab.hasUnsavedChanges && <span className="w-2 h-2 rounded-full bg-blue-500" />}
+                  {tab.template.id || 'Новый'}
+                  <X
+                    className="w-3.5 h-3.5 opacity-60 hover:opacity-100"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleTabClose(tab.id);
+                    }}
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+
+
+            <button
+              onClick={handleCloseTab}
+              className="px-3 py-1.5 rounded flex items-center gap-2"
+              title="Закрыть"
+              style={{
+                backgroundColor: 'var(--theme-button-secondary-bg)',
+                color: 'var(--theme-button-secondary-text)',
+                border: '1px solid var(--theme-button-secondary-border)',
+              }}
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-        ) : (
-          <div className="space-y-4">
+          {/* Main content with sidebar */}
+          <div className="flex flex-1 overflow-hidden">
+            {/* Sidebar */}
+            <div
+              className="w-64 border-r overflow-y-auto"
+              style={{
+                backgroundColor: 'var(--theme-sidebar-bg)',
+                borderColor: 'var(--theme-border)',
+              }}
+            >
+              <TemplateSidebar
+                activeTemplateId={formData.id}
+                onTemplateSelect={handleTemplateSelect}
+                onNewTemplate={() => {
+                  const newTab = {
+                    id: 'new-' + Date.now(),
+                    template: { is_add: 1, data: '', settings: {} },
+                    hasUnsavedChanges: false
+                  };
+                  setTabs(prev => [...prev, newTab]);
+                  setActiveTabId(newTab.id);
+                  setFormData({ is_add: 1, data: '', settings: {} });
+                  setEditorLanguage('plaintext');
+                }}
+              />
+            </div>
+            
+            {/* Editor content */}
+            <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: 'var(--theme-content-bg)' }}>
+              {loading ? (
+                <div className="flex items-center justify-center flex-1">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col p-4 min-h-0">
+                  {/* ID шаблона и язык в одной строке */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <label className="text-sm font-medium shrink-0" style={{ color: 'var(--theme-content-text-muted)' }}>
+                      ID *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.id || ''}
+                      onChange={(e) => handleChange('id', e.target.value)}
+                      readOnly={!isAdd}
+                      pattern="[A-Za-z0-9_\-\/]+"
+                      placeholder="template-id"
+                      className={`w-64 px-3 py-2 text-sm rounded border ${!isAdd ? 'opacity-60' : ''}`}
+                      style={{
+                        backgroundColor: 'var(--theme-input-bg)',
+                        borderColor: 'var(--theme-input-border)',
+                        color: 'var(--theme-input-text)',
+                      }}
+                    />
+                    
+                    <label className="text-sm font-medium shrink-0 ml-4" style={{ color: 'var(--theme-content-text-muted)' }}>
+                      Язык
+                    </label>
+                    <div className="flex gap-1 flex-wrap">
+                      {['plaintext', 'json', 'html', 'shell', 'perl', 'javascript', 'tt'].map(lang => (
+                        <button
+                          key={lang}
+                          onClick={() => setEditorLanguage(lang)}
+                          className={`px-3 py-1 text-xs rounded ${editorLanguage === lang ? 'font-semibold' : ''}`}
+                          style={{
+                            backgroundColor: editorLanguage === lang ? 'var(--accent-primary)' : 'var(--theme-button-secondary-bg)',
+                            color: editorLanguage === lang ? 'var(--accent-text)' : 'var(--theme-button-secondary-text)',
+                            border: `1px solid ${editorLanguage === lang ? 'var(--accent-primary)' : 'var(--theme-button-secondary-border)'}`,
+                          }}
+                        >
+                          {lang.toUpperCase()}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => detectLanguage(formData.data || '')}
+                        className="px-3 py-1 text-xs rounded"
+                        title="Автоопределение языка"
+                        style={{
+                          backgroundColor: 'var(--theme-button-secondary-bg)',
+                          color: 'var(--theme-button-secondary-text)',
+                          border: '1px solid var(--theme-button-secondary-border)',
+                        }}
+                      >
+                        AUTO
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Monaco Editor для data */}
+                  <div className="flex-1 flex items-start gap-3 mb-3 min-h-0">
+                    <div className="flex-1 border rounded overflow-hidden h-full" style={{ borderColor: 'var(--theme-input-border)', backgroundColor: 'var(--theme-input-bg)' }}>
+                      <Editor
+                        height="100%"
+                        language={editorLanguage}
+                        value={formData.data || ''}
+                        onChange={handleEditorChange}
+                        theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
+                        options={{
+                          fontSize: 14,
+                          tabSize: 2,
+                          insertSpaces: true,
+                          wordWrap: 'on',
+                          minimap: { enabled: true },
+                          scrollBeyondLastLine: false,
+                          automaticLayout: true,
+                          lineNumbers: 'on',
+                          folding: true,
+                        }}
+                        onMount={(editor) => {
+                          editorRef.current = editor;
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* JsonEditor для settings */}
+                  <div className="flex items-start gap-3">
+                    <label className="w-24 text-sm font-medium shrink-0 pt-2" style={{ color: 'var(--theme-content-text-muted)' }}>
+                      Settings
+                    </label>
+                    <div className="flex-1 border rounded" style={{ borderColor: 'var(--theme-input-border)', backgroundColor: 'var(--theme-input-bg)' }}>
+                      <JsonEditor
+                        data={formData.settings || {}}
+                        onChange={(value) => handleChange('settings', value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Footer */}
+              <div
+                className="border-t p-4"
+                style={{
+                  backgroundColor: 'var(--theme-modal-footer-bg)',
+                  borderColor: 'var(--theme-border)',
+                }}
+              >
+                {renderFooter()}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <Modal
+          open={open}
+          onClose={handleModalClose}
+          title={isAdd ? 'Создание шаблона' : `Редактирование шаблона: ${formData.id || ''}`}
+          footer={renderFooter()}
+          size="xl"
+        >
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            </div>
+          ) : (
+            <div className="space-y-4">
             {/* ID шаблона */}
             <div className="flex items-center gap-3">
               <label className="w-24 text-sm font-medium shrink-0" style={labelStyles}>
@@ -340,30 +934,75 @@ export default function TemplateModal({
               />
             </div>
           </div>
-        </div>
-        )}
-      </Modal>
+            </div>
+          )}
+        </Modal>
+      )}
 
       {/* Модалка подтверждения удаления */}
-      <ConfirmModal
-        open={confirmDeleteOpen}
-        onClose={() => setConfirmDeleteOpen(false)}
-        onConfirm={handleDelete}
-        title="Удалить шаблон?"
-        message={`Вы уверены, что хотите удалить шаблон "${formData.id}"? Это действие нельзя отменить.`}
-        confirmText="Удалить"
-        variant="danger"
-        loading={deleting}
-        confirmWord="delete"
-        confirmWordHint='Введите "delete" для подтверждения'
-      />
+      <div style={{ position: 'relative', zIndex: 10001 }}>
+        <ConfirmModal
+          open={confirmDeleteOpen}
+          onClose={() => setConfirmDeleteOpen(false)}
+          onConfirm={handleDelete}
+          title="Удалить шаблон?"
+          message={`Вы уверены, что хотите удалить шаблон "${formData.id}"? Это действие нельзя отменить.`}
+          confirmText="Удалить"
+          variant="danger"
+          loading={deleting}
+          confirmWord="delete"
+          confirmWordHint='Введите "delete" для подтверждения'
+        />
+      </div>
+
+      {/* Модалка подтверждения закрытия таба с несохраненными изменениями */}
+      <div style={{ position: 'relative', zIndex: 10001 }}>
+        <ConfirmModal
+          open={confirmCloseTabOpen}
+          onClose={() => {
+            setConfirmCloseTabOpen(false);
+            setTabToClose(null);
+          }}
+          onConfirm={() => {
+            if (tabToClose) {
+              closeTabById(tabToClose);
+              setConfirmCloseTabOpen(false);
+              setTabToClose(null);
+            }
+          }}
+          title="Несохранённые изменения"
+          message="Есть несохранённые изменения. Закрыть вкладку без сохранения?"
+          confirmText="Закрыть без сохранения"
+          cancelText="Отмена"
+          variant="warning"
+        />
+      </div>
+
+      {/* Модалка подтверждения закрытия всех табов */}
+      <div style={{ position: 'relative', zIndex: 10001 }}>
+        <ConfirmModal
+          open={confirmCloseAllOpen}
+          onClose={() => setConfirmCloseAllOpen(false)}
+          onConfirm={() => {
+            closeAllTabs();
+            setConfirmCloseAllOpen(false);
+          }}
+          title="Несохранённые изменения"
+          message="Есть несохранённые изменения в открытых вкладках. Закрыть редактор без сохранения?"
+          confirmText="Закрыть без сохранения"
+          cancelText="Отмена"
+          variant="warning"
+        />
+      </div>
 
       {/* Модалка теста/рендера шаблона */}
-      <TemplateTestModal
-        open={testModalOpen}
-        onClose={() => setTestModalOpen(false)}
-        templateId={formData.id || ''}
-      />
+      <div style={{ position: 'relative', zIndex: 10001 }}>
+        <TemplateTestModal
+          open={testModalOpen}
+          onClose={() => setTestModalOpen(false)}
+          templateId={formData.id || ''}
+        />
+      </div>
     </>
   );
 }
