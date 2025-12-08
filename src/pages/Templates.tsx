@@ -1,16 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import DataTable, { SortDirection } from '../components/DataTable';
-import EntityModal, { FieldConfig } from '../components/EntityModal';
 import Help from '../components/Help';
 import { shm_request, normalizeListResponse } from '../lib/shm_request';
+import { TemplateModal, TemplateCreateModal } from '../modals';
+import { Plus } from 'lucide-react';
 
 const templateColumns = [
   { key: 'id', label: 'Имя шаблона', visible: true, sortable: true },
-];
-
-const templateModalFields: FieldConfig[] = [
-  { key: 'id', label: 'Имя шаблона', copyable: true },
-  { key: 'data', label: 'Содержимое' },
 ];
 
 function Templates() {
@@ -23,6 +19,7 @@ function Templates() {
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [selectedRow, setSelectedRow] = useState<any>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const fetchData = useCallback((l: number, o: number, sf?: string, sd?: SortDirection) => {
     setLoading(true);
@@ -62,9 +59,23 @@ function Templates() {
 
   return (
     <div>
-      <div className="flex items-center mb-4">
-        <h2 className="text-xl font-bold">Шаблоны</h2>
-        <Help content="<b>Шаблоны</b>: список шаблонов для событий и уведомлений." />
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center">
+          <h2 className="text-xl font-bold">Шаблоны</h2>
+          <Help content="<b>Шаблоны</b>: список шаблонов для событий и уведомлений." />
+        </div>
+        <button
+          onClick={() => setCreateModalOpen(true)}
+          className="px-3 py-1.5 rounded flex items-center gap-2 text-sm font-medium btn-primary"
+          title="Создать шаблон"
+          style={{
+            backgroundColor: 'var(--accent-primary)',
+            color: 'var(--accent-text)',
+          }}
+        >
+          <Plus className="w-4 h-4" />
+          Добавить
+        </button>
       </div>
       <DataTable
         columns={templateColumns}
@@ -81,12 +92,34 @@ function Templates() {
         onRefresh={() => fetchData(limit, offset, sortField, sortDirection)}
         storageKey="templates"
       />
-      <EntityModal
+      <TemplateModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={`Шаблон: ${selectedRow?.id || ''}`}
         data={selectedRow}
-        fields={templateModalFields}
+        onSave={async (data) => {
+          await shm_request(`/shm/v1/admin/template`, {
+            method: 'POST',
+            body: JSON.stringify(data),
+          });
+          fetchData(limit, offset, sortField, sortDirection);
+        }}
+        onDelete={async (id) => {
+          await shm_request(`/shm/v1/admin/template/${id}`, {
+            method: 'DELETE',
+          });
+          fetchData(limit, offset, sortField, sortDirection);
+        }}
+      />
+      <TemplateCreateModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onSave={async (data) => {
+          await shm_request(`/shm/v1/admin/template`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+          });
+          fetchData(limit, offset, sortField, sortDirection);
+        }}
       />
     </div>
   );

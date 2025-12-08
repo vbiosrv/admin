@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Settings, Copy, Check } from 'lucide-react';
 import Modal from './Modal';
-// @ts-ignore - vanilla-jsoneditor types issue
-import { JSONEditor, Mode, type Content, type OnChangeStatus } from 'vanilla-jsoneditor';
+import JSONEditor from 'jsoneditor';
+import 'jsoneditor/dist/jsoneditor.css';
+import './jsoneditor-custom.css';
 
 interface JsonEditorProps {
   data: any;
@@ -11,78 +12,6 @@ interface JsonEditorProps {
   label?: string;
   className?: string;
   showInput?: boolean;
-}
-
-// Обёртка для vanilla-jsoneditor в React
-function VanillaJsonEditor({
-  initialContent,
-  onChange,
-  readonly = false,
-  mode = Mode.tree,
-}: {
-  initialContent: Content;
-  onChange?: (content: Content, previousContent: Content, status: OnChangeStatus) => void;
-  readonly?: boolean;
-  mode?: Mode.tree;
-}) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const editorRef = useRef<any>(null);
-  const onChangeRef = useRef(onChange);
-
-  // Храним актуальный onChange в ref
-  useEffect(() => {
-    onChangeRef.current = onChange;
-  }, [onChange]);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    // Обёртка для onChange, которая использует актуальный callback из ref
-    const handleChange = (content: Content, previousContent: Content, status: OnChangeStatus) => {
-      if (onChangeRef.current) {
-        onChangeRef.current(content, previousContent, status);
-      }
-    };
-
-    // @ts-ignore - vanilla-jsoneditor types
-    editorRef.current = new JSONEditor({
-      target: containerRef.current,
-      props: {
-        content: initialContent,
-        onChange: handleChange,
-        readOnly: readonly,
-        mode,
-        mainMenuBar: true,
-        navigationBar: false,
-        statusBar: true,
-        askToFormat: false,
-        escapeControlCharacters: false,
-        escapeUnicodeCharacters: false,
-      }
-    });
-
-    return () => {
-      if (editorRef.current) {
-        editorRef.current.destroy();
-        editorRef.current = null;
-      }
-    };
-  }, []);
-
-  // Обновляем readonly при изменении пропсов
-  useEffect(() => {
-    if (editorRef.current) {
-      editorRef.current.updateProps({ readOnly: readonly });
-    }
-  }, [readonly]);
-
-  return (
-    <div 
-      ref={containerRef} 
-      className="vanilla-jsoneditor-container"
-      style={{ height: '400px' }}
-    />
-  );
 }
 
 export default function JsonEditor({ 
@@ -94,62 +23,84 @@ export default function JsonEditor({
   showInput = true,
 }: JsonEditorProps) {
   const [modalOpen, setModalOpen] = useState(false);
-  const [localContent, setLocalContent] = useState<Content>({ json: data });
   const [copied, setCopied] = useState(false);
-  
-  // Ref для хранения актуального content (для использования в handleSave)
-  const contentRef = useRef<Content>({ json: data });
+  const editorRef = useRef<JSONEditor | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dataRef = useRef<any>(data);
 
+  // Обновляем ref при изменении data
   useEffect(() => {
-    setLocalContent({ json: data });
-    contentRef.current = { json: data };
+    dataRef.current = data;
   }, [data]);
 
+  // Инициализация редактора при открытии модалки
+  useEffect(() => {
+    if (modalOpen && containerRef.current && !editorRef.current) {
+      try {
+        const options: any = {
+          mode: readonly ? 'view' : 'tree',
+          modes: readonly ? ['view'] : ['tree'],
+          onChangeText: (jsonString: string) => {
+            if (!readonly) {
+              try {
+                dataRef.current = JSON.parse(jsonString);
+              } catch (e) {
+                // Игнорируем ошибки парсинга во время редактирования
+              }
+            }
+          },
+          navigationBar: false,
+          statusBar: !readonly,
+        };
+
+        editorRef.current = new JSONEditor(containerRef.current, options);
+        editorRef.current.set(dataRef.current || {});
+        
+        // Добавляем класс для скрытия ненужных кнопок
+        if (containerRef.current) {
+          containerRef.current.classList.add('jsoneditor-hide-sort-transform');
+        }
+      } catch (e) {
+        console.error('Failed to initialize JSON editor:', e);
+      }
+    }
+
+    // Cleanup при закрытии модалки
+    return () => {
+      if (!modalOpen && editorRef.current) {
+        editorRef.current.destroy();
+        editorRef.current = null;
+      }
+    };
+  }, [modalOpen, readonly]);
+
   const handleOpen = () => {
-    const initialContent = { json: data };
-    setLocalContent(initialContent);
-    contentRef.current = initialContent;
+    dataRef.current = data;
     setModalOpen(true);
   };
 
-  const handleContentChange = (content: Content, _previousContent: Content, status: OnChangeStatus) => {
-    // Сохраняем content если нет ошибок (contentErrors может быть null или undefined)
-    if (!status.contentErrors) {
-      setLocalContent(content);
-      contentRef.current = content;
-    }
-  };
-
   const handleSave = () => {
-    if (onChange) {
-      // Получаем JSON из content - используем ref для актуальных данных
-      const currentContent = contentRef.current;
-      let jsonData: any;
-      if ('json' in currentContent && currentContent.json !== undefined) {
-        jsonData = currentContent.json;
-      } else if ('text' in currentContent && currentContent.text) {
-        try {
-          jsonData = JSON.parse(currentContent.text);
-        } catch (e) {
-          console.error('Failed to parse JSON text:', e);
-          return; // Не закрываем если невалидный JSON
-        }
-      } else {
-        jsonData = {};
+    if (onChange && editorRef.current) {
+      try {
+        const jsonData = editorRef.current.get();
+        onChange(jsonData);
+      } catch (e) {
+        console.error('Failed to get JSON data:', e);
+        return;
       }
-      onChange(jsonData);
     }
     setModalOpen(false);
   };
 
   const handleCopy = async () => {
     try {
-      const text = 'json' in localContent 
-        ? JSON.stringify(localContent.json, null, 2)
-        : localContent.text || '';
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (editorRef.current) {
+        const jsonData = editorRef.current.get();
+        const text = JSON.stringify(jsonData, null, 2);
+        await navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
     } catch (e) {
       console.error('Failed to copy:', e);
     }
@@ -210,7 +161,7 @@ export default function JsonEditor({
               <button
                 type="button"
                 onClick={handleCopy}
-                className="px-3 py-2 rounded border flex items-center gap-2"
+                className="px-3 py-2 rounded border flex items-center gap-2 btn-primary"
                 style={{
                   backgroundColor: 'var(--bg-secondary)',
                   borderColor: 'var(--border-color)',
@@ -238,7 +189,7 @@ export default function JsonEditor({
                 <button
                   type="button"
                   onClick={handleSave}
-                  className="px-4 py-2 rounded text-white"
+                  className="px-4 py-2 rounded text-white btn-success"
                   style={{ backgroundColor: 'var(--primary)' }}
                 >
                   Сохранить
@@ -260,13 +211,11 @@ export default function JsonEditor({
           </div>
         )}
         
-        {modalOpen && (
-          <VanillaJsonEditor
-            initialContent={localContent}
-            onChange={handleContentChange}
-            readonly={readonly}
-          />
-        )}
+        <div 
+          ref={containerRef} 
+          className="jsoneditor-react-container"
+          style={{ height: '500px', width: '100%' }}
+        />
       </Modal>
     </div>
   );

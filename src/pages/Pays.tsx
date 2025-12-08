@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import DataTable, { SortDirection } from '../components/DataTable';
-import EntityModal, { FieldConfig } from '../components/EntityModal';
 import Help from '../components/Help';
 import { shm_request, normalizeListResponse } from '../lib/shm_request';
+import { PayModal, PayCreateModal } from '../modals';
+import { Plus } from 'lucide-react';
 
 const payColumns = [
   { key: 'id', label: 'ID', visible: true, sortable: true },
@@ -11,15 +12,6 @@ const payColumns = [
   { key: 'date', label: 'Дата', visible: true, sortable: true },
   { key: 'pay_system_id', label: 'Плат. система', visible: false, sortable: true },
   { key: 'comment', label: 'Комментарий', visible: false, sortable: false },
-];
-
-const payModalFields: FieldConfig[] = [
-  { key: 'id', label: 'ID', copyable: true },
-  { key: 'user_id', label: 'ID пользователя', copyable: true, linkTo: '/users' },
-  { key: 'money', label: 'Сумма' },
-  { key: 'date', label: 'Дата', type: 'datetime' },
-  { key: 'pay_system_id', label: 'Платёжная система' },
-  { key: 'comment', label: 'Комментарий' },
 ];
 
 function Pays() {
@@ -32,6 +24,7 @@ function Pays() {
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [selectedRow, setSelectedRow] = useState<any>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const fetchData = useCallback((l: number, o: number, sf?: string, sd?: SortDirection) => {
     setLoading(true);
@@ -71,9 +64,23 @@ function Pays() {
 
   return (
     <div>
-      <div className="flex items-center mb-4">
-        <h2 className="text-xl font-bold">Платежи</h2>
-        <Help content="<b>Платежи</b>: история платежей пользователей." />
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center">
+          <h2 className="text-xl font-bold">Платежи</h2>
+          <Help content="<b>Платежи</b>: история платежей пользователей." />
+        </div>
+        <button
+          onClick={() => setCreateModalOpen(true)}
+          className="px-3 py-1.5 rounded flex items-center gap-2 text-sm font-medium btn-primary"
+          title="Создать платёж"
+          style={{
+            backgroundColor: 'var(--accent-primary)',
+            color: 'var(--accent-text)',
+          }}
+        >
+          <Plus className="w-4 h-4" />
+          Добавить
+        </button>
       </div>
       <DataTable
         columns={payColumns}
@@ -90,12 +97,21 @@ function Pays() {
         onRefresh={() => fetchData(limit, offset, sortField, sortDirection)}
         storageKey="pays"
       />
-      <EntityModal
+      <PayModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={`Платёж #${selectedRow?.id || ''}`}
         data={selectedRow}
-        fields={payModalFields}
+      />
+      <PayCreateModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onSave={async (data) => {
+          await shm_request(`/shm/v1/admin/user/pay`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+          });
+          fetchData(limit, offset, sortField, sortDirection);
+        }}
       />
     </div>
   );

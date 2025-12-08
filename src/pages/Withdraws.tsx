@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import DataTable, { SortDirection } from '../components/DataTable';
-import EntityModal, { FieldConfig } from '../components/EntityModal';
 import Help from '../components/Help';
 import { shm_request, normalizeListResponse } from '../lib/shm_request';
+import { WithdrawModal } from '../modals';
 
 const withdrawColumns = [
   { key: 'withdraw_id', label: 'ID', visible: true, sortable: true },
@@ -18,22 +18,6 @@ const withdrawColumns = [
   { key: 'create_date', label: 'Дата создания', visible: true, sortable: true },
   { key: 'withdraw_date', label: 'Дата списания', visible: false, sortable: true },
   { key: 'end_date', label: 'Дата окончания', visible: false, sortable: true },
-];
-
-const withdrawModalFields: FieldConfig[] = [
-  { key: 'withdraw_id', label: 'ID', copyable: true },
-  { key: 'user_id', label: 'ID пользователя', copyable: true, linkTo: '/users' },
-  { key: 'user_service_id', label: 'ID услуги пользователя', linkTo: '/user-services' },
-  { key: 'service_id', label: 'ID услуги', linkTo: '/services' },
-  { key: 'cost', label: 'Стоимость' },
-  { key: 'total', label: 'Итого' },
-  { key: 'discount', label: 'Скидка' },
-  { key: 'bonus', label: 'Бонусы' },
-  { key: 'months', label: 'Период (мес.)' },
-  { key: 'qnt', label: 'Количество' },
-  { key: 'create_date', label: 'Дата создания', type: 'datetime' },
-  { key: 'withdraw_date', label: 'Дата списания', type: 'datetime' },
-  { key: 'end_date', label: 'Дата окончания', type: 'datetime' },
 ];
 
 function Withdraws() {
@@ -85,9 +69,11 @@ function Withdraws() {
 
   return (
     <div>
-      <div className="flex items-center mb-4">
-        <h2 className="text-xl font-bold">Списания</h2>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center">
+          <h2 className="text-xl font-bold">Списания</h2>
         <Help content="<b>Списания</b>: история списаний средств с баланса пользователей." />
+        </div>
       </div>
       <DataTable
         columns={withdrawColumns}
@@ -104,12 +90,17 @@ function Withdraws() {
         onRefresh={() => fetchData(limit, offset, sortField, sortDirection)}
         storageKey="withdraws"
       />
-      <EntityModal
+      <WithdrawModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={`Списание #${selectedRow?.withdraw_id || ''}`}
         data={selectedRow}
-        fields={withdrawModalFields}
+        onSave={async (data) => {
+          await shm_request(`/shm/v1/admin/user/service/withdraw`, {
+            method: 'POST',
+            body: JSON.stringify(data),
+          });
+          fetchData(limit, offset, sortField, sortDirection);
+        }}
       />
     </div>
   );

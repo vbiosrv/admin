@@ -85,7 +85,7 @@ export default function UserChangePasswordModal({
       <button
         onClick={handleSave}
         disabled={saving}
-        className="px-4 py-2 rounded flex items-center gap-2"
+        className="px-4 py-2 rounded flex items-center gap-2 btn-success"
         style={{
           backgroundColor: 'var(--accent-primary)',
           color: 'var(--accent-text)',

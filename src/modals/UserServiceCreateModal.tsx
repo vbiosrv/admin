@@ -110,7 +110,7 @@ export default function UserServiceCreateModal({
         <button
           onClick={handleSave}
           disabled={saving || !formData.user_id || !formData.service_id}
-          className="px-4 py-2 rounded flex items-center gap-2 disabled:opacity-50"
+          className="px-4 py-2 rounded flex items-center gap-2 disabled:opacity-50 btn-success"
           style={{
             backgroundColor: 'var(--accent-primary)',
             color: 'var(--accent-text)',

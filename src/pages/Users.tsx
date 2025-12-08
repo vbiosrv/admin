@@ -3,6 +3,7 @@ import DataTable, { SortDirection } from '../components/DataTable';
 import { UserModal, UserCreateModal, UserChangePasswordModal} from '../modals';
 import Help from '../components/Help';
 import { shm_request, normalizeListResponse } from '../lib/shm_request';
+import { Plus } from 'lucide-react';
 
 const userColumns = [
   { key: 'user_id', label: 'ID', visible: true, sortable: true},
@@ -116,13 +117,13 @@ function Users() {
         </div>
         <button
           onClick={handleCreate}
-          className="flex items-center gap-2 px-4 py-2 rounded font-medium transition-colors"
+          className="px-3 py-1.5 rounded flex items-center gap-2 text-sm font-medium btn-primary"
           style={{ 
             backgroundColor: 'var(--accent-primary)', 
             color: 'var(--accent-text)' 
           }}
         >
-          <span className="text-lg">+</span>
+          <Plus className="w-4 h-4" />
           Добавить
         </button>
       </div>

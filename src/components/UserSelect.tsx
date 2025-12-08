@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { User as UserIcon } from 'lucide-react';
 import { shm_request } from '../lib/shm_request';
+import { UserModal } from '../modals';
 
 interface User {
   user_id: number;
@@ -15,6 +17,8 @@ interface UserSelectProps {
   onChange?: (userId: number | null, user: User | null) => void;
   /** Callback при изменении состояния загрузки */
   onLoadingChange?: (loading: boolean) => void;
+  /** Callback после обновления пользователя через модалку */
+  onUserUpdated?: () => void;
   /** Режим только для чтения */
   readonly?: boolean;
   /** Placeholder для поля поиска */
@@ -34,6 +38,7 @@ export default function UserSelect({
   value,
   onChange,
   onLoadingChange,
+  onUserUpdated,
   readonly = false,
   placeholder = '... начните вводить имя, логин или id пользователя',
   className = '',
@@ -45,6 +50,7 @@ export default function UserSelect({
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingUser, setLoadingUser] = useState(false);
+  const [userModalOpen, setUserModalOpen] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -103,6 +109,32 @@ export default function UserSelect({
   useEffect(() => {
     onLoadingChange?.(loadingUser);
   }, [loadingUser, onLoadingChange]);
+
+  // Обработчики для UserModal
+  const handleOpenUserModal = () => {
+    if (selectedUser) {
+      setUserModalOpen(true);
+    }
+  };
+
+  const handleSaveUser = async (userData: Record<string, any>) => {
+    await shm_request('/shm/v1/admin/user', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+    // Перезагружаем данные пользователя
+    if (value) {
+      lastLoadedUserIdRef.current = null; // Сбрасываем, чтобы перезагрузить
+      const res = await shm_request(`/shm/v1/admin/user?user_id=${value}&limit=1`);
+      const data = res.data || res;
+      const users = Array.isArray(data) ? data : [];
+      if (users.length > 0) {
+        setSelectedUser(users[0]);
+        setSearch(formatUser(users[0]));
+      }
+    }
+    onUserUpdated?.();
+  };
   
   // Поиск пользователей
   const searchUsers = useCallback((query: string) => {
@@ -252,13 +284,41 @@ export default function UserSelect({
     }
 
     return (
-      <input
-        type="text"
-        value={selectedUser ? formatUser(selectedUser) : (value ? `#${value}` : '')}
-        readOnly
-        className={`w-full px-3 py-2 text-sm rounded border opacity-60 ${className}`}
-        style={inputStyles}
-      />
+      <>
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={selectedUser ? formatUser(selectedUser) : (value ? `#${value}` : '')}
+            readOnly
+            className={`flex-1 px-3 py-2 text-sm rounded border opacity-60 ${className}`}
+            style={inputStyles}
+          />
+          {selectedUser && (
+            <button
+              type="button"
+              onClick={handleOpenUserModal}
+              className="p-2 rounded border hover:opacity-80 transition-opacity"
+              style={{
+                backgroundColor: 'var(--theme-button-secondary-bg)',
+                borderColor: 'var(--theme-button-secondary-border)',
+                color: 'var(--theme-button-secondary-text)',
+              }}
+              title="Редактировать пользователя"
+            >
+              <UserIcon className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {selectedUser && (
+          <UserModal
+            open={userModalOpen}
+            onClose={() => setUserModalOpen(false)}
+            data={selectedUser}
+            onSave={handleSaveUser}
+          />
+        )}
+      </>
     );
   }
 

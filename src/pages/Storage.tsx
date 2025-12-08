@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import DataTable, { SortDirection } from '../components/DataTable';
 import Help from '../components/Help';
-import EntityModal, { FieldConfig } from '../components/EntityModal';
 import { shm_request, normalizeListResponse } from '../lib/shm_request';
+import { StorageModal } from '../modals';
 
 const storageColumns = [
   { key: 'user_id', label: 'User ID', visible: true, sortable: true },
@@ -10,14 +10,6 @@ const storageColumns = [
   { key: 'settings', label: 'Settings', visible: true, sortable: false },
   { key: 'created', label: 'Создано', visible: false, sortable: true },
   { key: 'user_service_id', label: 'ID услуги Пользователя', visible: false, sortable: true },
-];
-
-const modalFields: FieldConfig[] = [
-  { key: 'user_id', label: 'User ID', linkTo: '/users', copyable: true },
-  { key: 'name', label: 'Название' },
-  { key: 'user_service_id', label: 'ID услуги Пользователя', linkTo: '/user-services' },
-  { key: 'created', label: 'Создано', type: 'datetime' },
-  { key: 'settings', label: 'Settings', type: 'json' },
 ];
 
 function Storage() {
@@ -88,12 +80,16 @@ function Storage() {
         onRefresh={() => fetchData(limit, offset, sortField, sortDirection)}
         storageKey="storage"
       />
-      <EntityModal
+      <StorageModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={`Хранилище: ${selectedRow?.name || ''}`}
         data={selectedRow}
-        fields={modalFields}
+        onDelete={async (name) => {
+          await shm_request(`/shm/v1/admin/storage/manage/${name}?user_id=${selectedRow.user_id}`, {
+            method: 'DELETE',
+          });
+          fetchData(limit, offset, sortField, sortDirection);
+        }}
       />
     </div>
   );

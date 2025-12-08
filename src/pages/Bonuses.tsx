@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import DataTable, { SortDirection } from '../components/DataTable';
-import EntityModal, { FieldConfig } from '../components/EntityModal';
 import Help from '../components/Help';
 import { shm_request, normalizeListResponse } from '../lib/shm_request';
+import { BonusModal, BonusCreateModal } from '../modals';
+import { Plus } from 'lucide-react';
 
 const bonusColumns = [
   { key: 'bonus_id', label: 'ID', visible: true, sortable: true },
@@ -10,14 +11,6 @@ const bonusColumns = [
   { key: 'amount', label: 'Сумма', visible: true, sortable: true },
   { key: 'date', label: 'Дата', visible: true, sortable: true },
   { key: 'comment', label: 'Комментарий', visible: true, sortable: false },
-];
-
-const bonusModalFields: FieldConfig[] = [
-  { key: 'bonus_id', label: 'ID', copyable: true },
-  { key: 'user_id', label: 'ID пользователя', copyable: true, linkTo: '/users' },
-  { key: 'amount', label: 'Сумма' },
-  { key: 'date', label: 'Дата', type: 'datetime' },
-  { key: 'comment', label: 'Комментарий' },
 ];
 
 function Bonuses() {
@@ -30,6 +23,7 @@ function Bonuses() {
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [selectedRow, setSelectedRow] = useState<any>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const fetchData = useCallback((l: number, o: number, sf?: string, sd?: SortDirection) => {
     setLoading(true);
@@ -69,9 +63,23 @@ function Bonuses() {
 
   return (
     <div>
-      <div className="flex items-center mb-4">
-        <h2 className="text-xl font-bold">Бонусы</h2>
-        <Help content="<b>Бонусы</b>: история начисления бонусов пользователям." />
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center">
+          <h2 className="text-xl font-bold">Бонусы</h2>
+          <Help content="<b>Бонусы</b>: история начисления бонусов пользователям." />
+        </div>
+        <button
+          onClick={() => setCreateModalOpen(true)}
+          className="px-3 py-1.5 rounded flex items-center gap-2 text-sm font-medium btn-primary"
+          title="Начислить бонус"
+          style={{
+            backgroundColor: 'var(--accent-primary)',
+            color: 'var(--accent-text)',
+          }}
+        >
+          <Plus className="w-4 h-4" />
+          Добавить
+        </button>
       </div>
       <DataTable
         columns={bonusColumns}
@@ -88,12 +96,21 @@ function Bonuses() {
         onRefresh={() => fetchData(limit, offset, sortField, sortDirection)}
         storageKey="bonuses"
       />
-      <EntityModal
+      <BonusModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={`Бонус #${selectedRow?.bonus_id || ''}`}
         data={selectedRow}
-        fields={bonusModalFields}
+      />
+      <BonusCreateModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onSave={async (data) => {
+          await shm_request(`/shm/v1/admin/user/bonus`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+          });
+          fetchData(limit, offset, sortField, sortDirection);
+        }}
       />
     </div>
   );

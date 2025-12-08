@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import DataTable, { SortDirection } from '../components/DataTable';
-import EntityModal, { FieldConfig } from '../components/EntityModal';
 import Help from '../components/Help';
 import { shm_request, normalizeListResponse } from '../lib/shm_request';
+import { PromoModal, PromoCreateModal } from '../modals';
+import { Plus } from 'lucide-react';
 
 const promoColumns = [
   { key: 'id', label: 'Промокод', visible: true, sortable: true },
@@ -12,16 +13,6 @@ const promoColumns = [
   { key: 'expire', label: 'Истекает', visible: true, sortable: true },
   { key: 'used', label: 'Использован', visible: false, sortable: true },
   { key: 'used_by', label: 'Кем использован', visible: false, sortable: true },
-];
-
-const promoModalFields: FieldConfig[] = [
-  { key: 'id', label: 'Промокод', copyable: true },
-  { key: 'user_id', label: 'ID создателя', copyable: true, linkTo: '/users' },
-  { key: 'template_id', label: 'ID шаблона', linkTo: '/templates' },
-  { key: 'created', label: 'Создан', type: 'datetime' },
-  { key: 'expire', label: 'Истекает', type: 'datetime' },
-  { key: 'used', label: 'Использован', type: 'datetime' },
-  { key: 'used_by', label: 'Кем использован', linkTo: '/users' },
 ];
 
 function Promo() {
@@ -34,6 +25,7 @@ function Promo() {
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [selectedRow, setSelectedRow] = useState<any>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const fetchData = useCallback((l: number, o: number, sf?: string, sd?: SortDirection) => {
     setLoading(true);
@@ -73,9 +65,23 @@ function Promo() {
 
   return (
     <div>
-      <div className="flex items-center mb-4">
-        <h2 className="text-xl font-bold">Промокоды</h2>
-        <Help content="<b>Промокоды</b>: список промокодов. Можно создавать, удалять, смотреть кто использовал." />
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center">
+          <h2 className="text-xl font-bold">Промокоды</h2>
+          <Help content="<b>Промокоды</b>: список промокодов. Можно создавать, удалять, смотреть кто использовал." />
+        </div>
+        <button
+          onClick={() => setCreateModalOpen(true)}
+          className="px-3 py-1.5 rounded flex items-center gap-2 text-sm font-medium btn-primary"
+          title="Создать промокод"
+          style={{
+            backgroundColor: 'var(--accent-primary)',
+            color: 'var(--accent-text)',
+          }}
+        >
+          <Plus className="w-4 h-4" />
+          Добавить
+        </button>
       </div>
       <DataTable
         columns={promoColumns}
@@ -92,12 +98,34 @@ function Promo() {
         onRefresh={() => fetchData(limit, offset, sortField, sortDirection)}
         storageKey="promo"
       />
-      <EntityModal
+      <PromoModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={`Промокод: ${selectedRow?.id || ''}`}
         data={selectedRow}
-        fields={promoModalFields}
+        onSave={async (data) => {
+          await shm_request(`/shm/v1/admin/promo`, {
+            method: 'POST',
+            body: JSON.stringify(data),
+          });
+          fetchData(limit, offset, sortField, sortDirection);
+        }}
+        onDelete={async (id) => {
+          await shm_request(`/shm/v1/admin/promo/${id}`, {
+            method: 'DELETE',
+          });
+          fetchData(limit, offset, sortField, sortDirection);
+        }}
+      />
+      <PromoCreateModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onSave={async (data) => {
+          await shm_request(`/shm/v1/admin/promo`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+          });
+          fetchData(limit, offset, sortField, sortDirection);
+        }}
       />
     </div>
   );

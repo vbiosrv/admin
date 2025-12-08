@@ -1,47 +1,50 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../components/Modal';
-import { Save, X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import JsonEditor from '../components/JsonEditor';
 import UserSelect from '../components/UserSelect';
 
-interface ProfileCreateModalProps {
+interface BonusCreateModalProps {
   open: boolean;
   onClose: () => void;
   onSave: (data: Record<string, any>) => void | Promise<void>;
-  /** Предзаполненный user_id (опционально) */
-  userId?: number;
 }
 
-export default function ProfileCreateModal({
+export default function BonusCreateModal({
   open,
   onClose,
   onSave,
-  userId,
-}: ProfileCreateModalProps) {
+}: BonusCreateModalProps) {
   const [formData, setFormData] = useState<Record<string, any>>({
-    user_id: userId || null,
-    data: {},
+    user_id: null,
+    bonus: '',
+    comment: null,
   });
   const [saving, setSaving] = useState(false);
 
-  // Сброс при открытии
+  // Сброс формы при открытии
   useEffect(() => {
     if (open) {
       setFormData({
-        user_id: userId || null,
-        data: {},
+        user_id: null,
+        bonus: '',
+        comment: null,
       });
     }
-  }, [open, userId]);
+  }, [open]);
 
   const handleChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSave = async () => {
+    // Валидация
     if (!formData.user_id) {
       toast.error('Выберите пользователя');
+      return;
+    }
+    if (!formData.bonus || Number(formData.bonus) <= 0) {
+      toast.error('Введите сумму бонуса');
       return;
     }
 
@@ -49,10 +52,10 @@ export default function ProfileCreateModal({
     try {
       await onSave(formData);
       onClose();
-      toast.success('Персональные данные созданы');
+      toast.success('Бонус начислен');
     } catch (error) {
-      console.error('Ошибка сохранения:', error);
-      toast.error('Ошибка сохранения');
+      console.error('Ошибка начисления бонуса:', error);
+      toast.error('Ошибка начисления бонуса');
     } finally {
       setSaving(false);
     }
@@ -84,15 +87,15 @@ export default function ProfileCreateModal({
       </button>
       <button
         onClick={handleSave}
-        disabled={saving || !formData.user_id}
+        disabled={saving}
         className="px-4 py-2 rounded flex items-center gap-2 disabled:opacity-50 btn-success"
         style={{
           backgroundColor: 'var(--accent-primary)',
           color: 'var(--accent-text)',
         }}
       >
-        <Save className="w-4 h-4" />
-        {saving ? 'Сохранение...' : 'Создать'}
+        <Plus className="w-4 h-4" />
+        {saving ? 'Начисление...' : 'Начислить'}
       </button>
     </div>
   );
@@ -101,15 +104,15 @@ export default function ProfileCreateModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Создание персональных данных"
+      title="Начисление бонуса"
       footer={renderFooter()}
-      size="lg"
+      size="md"
     >
       <div className="space-y-4">
         {/* Пользователь */}
         <div className="flex items-center gap-3">
-          <label className="w-28 text-sm font-medium shrink-0" style={labelStyles}>
-            Пользователь <span className="text-red-500">*</span>
+          <label className="w-32 text-sm font-medium shrink-0" style={labelStyles}>
+            Пользователь *
           </label>
           <div className="flex-1">
             <UserSelect
@@ -119,18 +122,36 @@ export default function ProfileCreateModal({
           </div>
         </div>
 
-        {/* Данные (JSON) */}
-        <div className="pt-2">
-          <label className="text-sm font-medium" style={labelStyles}>
-            Данные
+        {/* Сумма бонуса */}
+        <div className="flex items-center gap-3">
+          <label className="w-32 text-sm font-medium shrink-0" style={labelStyles}>
+            Сумма бонуса *
           </label>
-          <div className="mt-2">
-            <JsonEditor
-              data={formData.data ?? {}}
-              onChange={(newData) => handleChange('data', newData)}
-              showInput={true}
-            />
-          </div>
+          <input
+            type="number"
+            value={formData.bonus}
+            onChange={(e) => handleChange('bonus', e.target.value)}
+            step="0.01"
+            min="0"
+            placeholder="0.00"
+            className="flex-1 px-3 py-2 text-sm rounded border"
+            style={inputStyles}
+          />
+        </div>
+
+        {/* Комментарий */}
+        <div className="flex items-start gap-3">
+          <label className="w-32 text-sm font-medium shrink-0 pt-2" style={labelStyles}>
+            Комментарий
+          </label>
+          <textarea
+            value={formData.comment?.text || ''}
+            onChange={(e) => handleChange('comment', { text: e.target.value })}
+            rows={4}
+            placeholder="Комментарий к начислению"
+            className="flex-1 px-3 py-2 text-sm rounded border resize-none"
+            style={inputStyles}
+          />
         </div>
       </div>
     </Modal>
