@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import DataTable, { SortDirection } from '../components/DataTable';
-import EntityModal, { FieldConfig, EditFieldConfig } from '../components/EntityModal';
-import ConfirmModal from '../components/ConfirmModal';
+import ServiceModal from '../modals/ServiceModal';
+import ServiceCreateModal from '../modals/ServiceCreateModal';
 import Help from '../components/Help';
 import { shm_request, normalizeListResponse } from '../lib/shm_request';
 
@@ -16,47 +16,6 @@ const serviceColumns = [
   { key: 'descr', label: 'Описание', visible: false, sortable: false },
 ];
 
-// Поля для просмотра
-const serviceModalFields: FieldConfig[] = [
-  { key: 'service_id', label: 'ID', copyable: true },
-  { key: 'name', label: 'Название' },
-  { key: 'cost', label: 'Стоимость' },
-  { key: 'period', label: 'Период' },
-  { key: 'period_cost', label: 'Стоимость периода' },
-  { key: 'category', label: 'Категория' },
-  { key: 'allow_to_order', label: 'Доступна для заказа', type: 'boolean' },
-  { key: 'deleted', label: 'Удалена', type: 'boolean' },
-  { key: 'descr', label: 'Описание' },
-  { key: 'config', label: 'Конфигурация', type: 'json' },
-];
-
-// Поля для редактирования
-const serviceEditFields: EditFieldConfig[] = [
-  { key: 'service_id', label: 'ID', type: 'readonly' },
-  { key: 'name', label: 'Название', type: 'text', required: true },
-  { key: 'cost', label: 'Стоимость', type: 'number', min: 0 },
-  { key: 'period', label: 'Период (месяцев)', type: 'number', min: 0 },
-  { key: 'period_cost', label: 'Стоимость периода', type: 'number', min: 0 },
-  { 
-    key: 'category', 
-    label: 'Категория', 
-    type: 'select', 
-    options: [
-      { value: '', label: '-- Без категории --' },
-      { value: 'hosting', label: 'Хостинг' },
-      { value: 'vps', label: 'VPS' },
-      { value: 'dedicated', label: 'Выделенный сервер' },
-      { value: 'domain', label: 'Домены' },
-      { value: 'ssl', label: 'SSL сертификаты' },
-      { value: 'other', label: 'Прочее' },
-    ]
-  },
-  { key: 'allow_to_order', label: 'Доступна для заказа', type: 'checkbox' },
-  { key: 'deleted', label: 'Удалена', type: 'checkbox' },
-  { key: 'descr', label: 'Описание', type: 'textarea' },
-  { key: 'config', label: 'Конфигурация (JSON)', type: 'json' },
-];
-
 function Services() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -65,15 +24,19 @@ function Services() {
   const [offset, setOffset] = useState(0);
   const [sortField, setSortField] = useState<string | undefined>();
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+  const [filters, setFilters] = useState<Record<string, string>>({});
   const [selectedRow, setSelectedRow] = useState<any>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<'view' | 'edit' | 'create'>('view');
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
-  const fetchData = useCallback((l: number, o: number, sf?: string, sd?: SortDirection) => {
+  const fetchData = useCallback((l: number, o: number, f: Record<string, string>, sf?: string, sd?: SortDirection) => {
     setLoading(true);
     let url = `/shm/v1/admin/service?limit=${l}&offset=${o}`;
+    
+    if (Object.keys(f).length > 0) {
+      url += `&filter=${encodeURIComponent(JSON.stringify(f))}`;
+    }
+    
     if (sf && sd) {
       url += `&sort_field=${sf}&sort_direction=${sd}`;
     }
@@ -88,8 +51,8 @@ function Services() {
   }, []);
 
   useEffect(() => {
-    fetchData(limit, offset, sortField, sortDirection);
-  }, [limit, offset, sortField, sortDirection, fetchData]);
+    fetchData(limit, offset, filters, sortField, sortDirection);
+  }, [limit, offset, filters, sortField, sortDirection, fetchData]);
 
   const handlePageChange = (newLimit: number, newOffset: number) => {
     setLimit(newLimit);
@@ -102,73 +65,65 @@ function Services() {
     setOffset(0);
   };
 
+  const handleFilterChange = (newFilters: Record<string, string>) => {
+    setFilters(newFilters);
+    setOffset(0);
+  };
+
   const handleRowClick = (row: any) => {
     setSelectedRow(row);
-    setModalMode('view');
-    setModalOpen(true);
+    setViewModalOpen(true);
   };
 
   const handleCreate = () => {
-    setSelectedRow({});
-    setModalMode('create');
-    setModalOpen(true);
+    setCreateModalOpen(true);
   };
 
-  const handleEdit = () => {
-    setModalMode('edit');
-  };
-
-  const handleSave = async (updatedData: any) => {
+  const handleSaveView = async (updatedData: any) => {
     try {
-      if (modalMode === 'create') {
-        // POST для создания нового
-        await shm_request('/shm/v1/admin/service', {
-          method: 'POST',
-          body: JSON.stringify(updatedData),
-        });
-      } else {
-        // PUT для обновления существующего
-        await shm_request(`/shm/v1/admin/service/${updatedData.service_id}`, {
-          method: 'PUT',
-          body: JSON.stringify(updatedData),
-        });
-      }
-      setModalOpen(false);
-      fetchData(limit, offset, sortField, sortDirection);
+      await shm_request(`/shm/v1/admin/service/${updatedData.service_id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updatedData),
+      });
+      setViewModalOpen(false);
+      fetchData(limit, offset, filters, sortField, sortDirection);
     } catch (error) {
       console.error('Ошибка сохранения:', error);
       throw error;
     }
   };
 
-  const handleDelete = async () => {
-    if (!selectedRow?.service_id) return;
-    setConfirmDelete(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!selectedRow?.service_id) return;
-    
-    setDeleting(true);
-    setConfirmDelete(false);
+  const handleCreateNew = async (newData: any) => {
     try {
-      await shm_request(`/shm/v1/admin/service/${selectedRow.service_id}`, {
-        method: 'DELETE',
+      await shm_request('/shm/v1/admin/service', {
+        method: 'PUT',
+        body: JSON.stringify(newData),
       });
-      setModalOpen(false);
-      fetchData(limit, offset, sortField, sortDirection);
+      setCreateModalOpen(false);
+      fetchData(limit, offset, filters, sortField, sortDirection);
     } catch (error) {
-      console.error('Ошибка удаления:', error);
+      console.error('Ошибка создания:', error);
       throw error;
-    } finally {
-      setDeleting(false);
     }
   };
 
-  const handleDuplicate = () => {
-    const { service_id, ...rest } = selectedRow;
-    setSelectedRow({ ...rest, name: `${rest.name} (копия)` });
-    setModalMode('create');
+  const handleDeleteService = async (serviceId: number) => {
+    try {
+      await shm_request(`/shm/v1/admin/service/${serviceId}`, {
+        method: 'DELETE',
+      });
+      setViewModalOpen(false);
+      fetchData(limit, offset, filters, sortField, sortDirection);
+    } catch (error) {
+      console.error('Ошибка удаления:', error);
+      throw error;
+    }
+  };
+
+  const handleDuplicate = (data: Record<string, any>) => {
+    setSelectedRow(data);
+    setViewModalOpen(false);
+    setCreateModalOpen(true);
   };
 
   return (
@@ -199,40 +154,27 @@ function Services() {
         offset={offset}
         onPageChange={handlePageChange}
         onSort={handleSort}
+        onFilterChange={handleFilterChange}
         sortField={sortField}
         sortDirection={sortDirection}
         onRowClick={handleRowClick}
-        onRefresh={() => fetchData(limit, offset, sortField, sortDirection)}
+        onRefresh={() => fetchData(limit, offset, filters, sortField, sortDirection)}
         storageKey="services"
       />
-      <EntityModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title={
-          modalMode === 'create' 
-            ? 'Создание услуги' 
-            : `Услуга: ${selectedRow?.name || selectedRow?.service_id || ''}`
-        }
+      <ServiceModal
+        open={viewModalOpen}
+        onClose={() => setViewModalOpen(false)}
         data={selectedRow}
-        fields={serviceModalFields}
-        editFields={serviceEditFields}
-        mode={modalMode}
-        onEdit={handleEdit}
-        onSave={handleSave}
-        onDelete={modalMode !== 'create' ? handleDelete : undefined}
-        onDuplicate={modalMode !== 'create' ? handleDuplicate : undefined}
-        size="lg"
+        onSave={handleSaveView}
+        onDelete={handleDeleteService}
+        onDuplicate={handleDuplicate}
       />
 
-      <ConfirmModal
-        open={confirmDelete}
-        onClose={() => setConfirmDelete(false)}
-        onConfirm={handleConfirmDelete}
-        title="Удаление услуги"
-        message={`Вы уверены, что хотите удалить услугу "${selectedRow?.name}"?`}
-        confirmText="Удалить"
-        variant="danger"
-        loading={deleting}
+      <ServiceCreateModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onCreate={handleCreateNew}
+        initialData={selectedRow}
       />
     </div>
   );

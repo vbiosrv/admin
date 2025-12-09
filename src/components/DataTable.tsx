@@ -39,6 +39,7 @@ interface DataTableProps {
   onRowClick?: (row: any) => void;
   onRefresh?: () => void;
   onSort?: (field: string, direction: SortDirection) => void;
+  onFilterChange?: (filters: Record<string, string>) => void;
   sortField?: string;
   sortDirection?: SortDirection;
   height?: string;
@@ -113,6 +114,7 @@ function DataTable({
   onRowClick,
   onRefresh,
   onSort,
+  onFilterChange,
   sortField,
   sortDirection,
   height = '500px',
@@ -164,9 +166,9 @@ function DataTable({
   
   // Инициализация автообновления с учётом сохранённых настроек
   const [autoRefresh, setAutoRefresh] = useState(() => {
-    if (!storageKey) return 5;
+    if (!storageKey) return 0;
     const stored = loadSettings(storageKey);
-    return stored?.autoRefresh ?? 5;
+    return stored?.autoRefresh ?? 0;
   });
   
   const [showAutoRefreshMenu, setShowAutoRefreshMenu] = useState(false);
@@ -176,6 +178,8 @@ function DataTable({
   const autoRefreshRef = useRef<HTMLDivElement>(null);
   const isInitialMount = useRef(true);
   const prevExternalFiltersKeys = useRef<Set<string>>(new Set());
+  const isFirstLoad = useRef(true); // Отслеживаем первую загрузку
+  const filterTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null); // Debounce для фильтров
 
   // Синхронизация внешних фильтров с внутренними
   useEffect(() => {
@@ -200,6 +204,42 @@ function DataTable({
       return newFilters;
     });
   }, [externalFilters]);
+
+  // Вызов onFilterChange с debounce при изменении фильтров
+  useEffect(() => {
+    if (!onFilterChange) return;
+    
+    // Очищаем предыдущий таймер
+    if (filterTimeoutRef.current) {
+      clearTimeout(filterTimeoutRef.current);
+    }
+    
+    // Устанавливаем новый таймер (1 секунда как в старой версии)
+    filterTimeoutRef.current = setTimeout(() => {
+      // Формируем фильтры в формате %value% (как в старой версии)
+      const formattedFilters: Record<string, string> = {};
+      Object.entries(columnFilters).forEach(([key, value]) => {
+        if (value) {
+          formattedFilters[key] = `%${value}%`;
+        }
+      });
+      onFilterChange(formattedFilters);
+    }, 1000);
+    
+    // Очистка при размонтировании
+    return () => {
+      if (filterTimeoutRef.current) {
+        clearTimeout(filterTimeoutRef.current);
+      }
+    };
+  }, [columnFilters, onFilterChange]);
+
+  // Отслеживаем окончание первой загрузки
+  useEffect(() => {
+    if (!loading && isFirstLoad.current) {
+      isFirstLoad.current = false;
+    }
+  }, [loading]);
 
   // Сохранение настроек в localStorage при изменении колонок или автообновления
   useEffect(() => {
@@ -344,15 +384,6 @@ function DataTable({
     });
     setDraggedColumn(null);
   };
-
-  // Filter data by column filters
-  const filteredData = data.filter(row => {
-    return Object.entries(columnFilters).every(([key, filterValue]) => {
-      if (!filterValue) return true;
-      const cellValue = String(row[key] ?? '').toLowerCase();
-      return cellValue.includes(filterValue.toLowerCase());
-    });
-  });
 
   // Column visibility toggle
   const toggleColumn = (key: string) => {
@@ -666,7 +697,7 @@ function DataTable({
           </thead>
           
           <tbody>
-            {loading ? (
+            {loading && isFirstLoad.current ? (
               <tr>
                 <td 
                   colSpan={visibleColumns.length} 
@@ -679,7 +710,7 @@ function DataTable({
                   </div>
                 </td>
               </tr>
-            ) : filteredData.length === 0 ? (
+            ) : data.length === 0 ? (
               <tr>
                 <td 
                   colSpan={visibleColumns.length} 
@@ -688,12 +719,12 @@ function DataTable({
                 >
                   <div className="empty-state">
                     <Filter className="w-8 h-8 mb-2 opacity-50" />
-                    Нет данных
+                    {loading ? 'Загрузка...' : 'Нет данных'}
                   </div>
                 </td>
               </tr>
             ) : (
-              filteredData.map((row, idx) => (
+              data.map((row, idx) => (
                 <tr 
                   key={idx} 
                   className={`${onRowClick ? 'cursor-pointer' : ''}`}
@@ -745,7 +776,7 @@ function DataTable({
         <div className="flex gap-4 items-center">
           <div style={{ color: 'var(--theme-content-text-muted)' }}>
             Всего: <strong style={{ color: 'var(--theme-content-text)' }}>{total}</strong>
-            {' '} | Показано: <strong style={{ color: 'var(--theme-content-text)' }}>{filteredData.length}</strong>
+            {' '} | Показано: <strong style={{ color: 'var(--theme-content-text)' }}>{data.length}</strong>
             {' '} | Страница <strong style={{ color: 'var(--theme-content-text)' }}>{currentPage}</strong> из <strong style={{ color: 'var(--theme-content-text)' }}>{totalPages}</strong>
           </div>
           

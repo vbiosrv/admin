@@ -23,6 +23,7 @@ function Pays() {
   const [offset, setOffset] = useState(0);
   const [sortField, setSortField] = useState<string | undefined>();
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+  const [filters, setFilters] = useState<Record<string, string>>({});
   const [selectedRow, setSelectedRow] = useState<any>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -38,9 +39,14 @@ function Pays() {
     return undefined;
   }, [selectedUser]);
 
-  const fetchData = useCallback((l: number, o: number, sf?: string, sd?: SortDirection) => {
+  const fetchData = useCallback((l: number, o: number, f: Record<string, string>, sf?: string, sd?: SortDirection) => {
     setLoading(true);
     let url = `/shm/v1/admin/user/pay?limit=${l}&offset=${o}`;
+    
+    if (Object.keys(f).length > 0) {
+      url += `&filter=${encodeURIComponent(JSON.stringify(f))}`;
+    }
+    
     if (sf && sd) {
       url += `&sort_field=${sf}&sort_direction=${sd}`;
     }
@@ -55,8 +61,8 @@ function Pays() {
   }, []);
 
   useEffect(() => {
-    fetchData(limit, offset, sortField, sortDirection);
-  }, [limit, offset, sortField, sortDirection, fetchData]);
+    fetchData(limit, offset, filters, sortField, sortDirection);
+  }, [limit, offset, filters, sortField, sortDirection, fetchData]);
 
   const handlePageChange = (newLimit: number, newOffset: number) => {
     setLimit(newLimit);
@@ -66,6 +72,11 @@ function Pays() {
   const handleSort = (field: string, direction: SortDirection) => {
     setSortField(direction ? field : undefined);
     setSortDirection(direction);
+    setOffset(0);
+  };
+
+  const handleFilterChange = (newFilters: Record<string, string>) => {
+    setFilters(newFilters);
     setOffset(0);
   };
 
@@ -103,10 +114,11 @@ function Pays() {
         offset={offset}
         onPageChange={handlePageChange}
         onSort={handleSort}
+        onFilterChange={handleFilterChange}
         sortField={sortField}
         sortDirection={sortDirection}
         onRowClick={handleRowClick}
-        onRefresh={() => fetchData(limit, offset, sortField, sortDirection)}
+        onRefresh={() => fetchData(limit, offset, filters, sortField, sortDirection)}
         storageKey="pays"
         externalFilters={externalFilters}
       />
@@ -123,7 +135,8 @@ function Pays() {
             method: 'PUT',
             body: JSON.stringify(data),
           });
-          fetchData(limit, offset, sortField, sortDirection);
+          setCreateModalOpen(false);
+          fetchData(limit, offset, filters, sortField, sortDirection);
         }}
       />
     </div>

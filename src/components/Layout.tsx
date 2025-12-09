@@ -12,6 +12,7 @@ import {
   ChevronRight,
   ChevronDown,
   Home,
+  Cloud,
   ListOrdered,
   CreditCard,
   Gift,
@@ -96,6 +97,11 @@ const navigation: MenuItem[] = [
       { name: 'Брендинг', href: '/branding' },
       { name: 'Внешний вид', href: '/appearance' },
     ]
+  },
+  {
+    name: 'SHM Cloud',
+    icon: Cloud,
+    href: '#',
   },
 ];
 

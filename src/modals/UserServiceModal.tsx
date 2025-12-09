@@ -58,9 +58,9 @@ export default function UserServiceModal({
     }
   }, [data, open]);
 
-  // Загрузка списка услуг для "Следующая услуга"
+  // Загрузка списка услуг для "Следующая услуга" (только один раз)
   useEffect(() => {
-    if (open) {
+    if (open && services.length === 0) {
       setLoadingServices(true);
       shm_request('/shm/v1/admin/service?limit=100')
         .then(res => {
@@ -297,13 +297,14 @@ export default function UserServiceModal({
           <label className="w-32 text-sm font-medium shrink-0" style={labelStyles}>
             Услуга
           </label>
-          <input
-            type="text"
-            value={`${formData.user_service_id || ''}# ${formData.name || ''}`}
-            disabled
-            className="flex-1 px-3 py-2 text-sm rounded border opacity-60"
-            style={inputStyles}
-          />
+          <div className="flex-1">
+            <ServiceSelect 
+              value={formData.service_id} 
+              readonly 
+              onLoadingChange={setLoadingUser}
+              onServiceUpdated={onRefresh}
+            />
+          </div>
         </div>
 
         {/* Статус и Биллинг */}
