@@ -180,6 +180,13 @@ function DataTable({
   const prevExternalFiltersKeys = useRef<Set<string>>(new Set());
   const isFirstLoad = useRef(true); // Отслеживаем первую загрузку
   const filterTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null); // Debounce для фильтров
+  const onRefreshRef = useRef(onRefresh); // Храним актуальную версию onRefresh
+  const prevFormattedFiltersRef = useRef<string>(''); // Храним предыдущие отформатированные фильтры
+
+  // Обновляем ref при изменении onRefresh
+  useEffect(() => {
+    onRefreshRef.current = onRefresh;
+  }, [onRefresh]);
 
   // Синхронизация внешних фильтров с внутренними
   useEffect(() => {
@@ -223,7 +230,13 @@ function DataTable({
           formattedFilters[key] = `%${value}%`;
         }
       });
-      onFilterChange(formattedFilters);
+      
+      // Проверяем, изменились ли фильтры
+      const filtersString = JSON.stringify(formattedFilters);
+      if (filtersString !== prevFormattedFiltersRef.current) {
+        prevFormattedFiltersRef.current = filtersString;
+        onFilterChange(formattedFilters);
+      }
     }, 1000);
     
     // Очистка при размонтировании
@@ -279,13 +292,15 @@ function DataTable({
 
   // Auto refresh
   useEffect(() => {
-    if (autoRefresh > 0 && onRefresh) {
+    if (autoRefresh > 0) {
       const interval = setInterval(() => {
-        onRefresh();
+        if (onRefreshRef.current) {
+          onRefreshRef.current();
+        }
       }, autoRefresh * 1000);
       return () => clearInterval(interval);
     }
-  }, [autoRefresh, onRefresh]);
+  }, [autoRefresh]);
 
   // Column resizing handlers - используем ref для мгновенного обновления
   const resizingRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
@@ -777,7 +792,6 @@ function DataTable({
           <div style={{ color: 'var(--theme-content-text-muted)' }}>
             Всего: <strong style={{ color: 'var(--theme-content-text)' }}>{total}</strong>
             {' '} | Показано: <strong style={{ color: 'var(--theme-content-text)' }}>{data.length}</strong>
-            {' '} | Страница <strong style={{ color: 'var(--theme-content-text)' }}>{currentPage}</strong> из <strong style={{ color: 'var(--theme-content-text)' }}>{totalPages}</strong>
           </div>
           
           <div className="flex gap-2 items-center">

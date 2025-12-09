@@ -73,7 +73,7 @@ function SpoolHistory() {
 
   useEffect(() => {
     fetchData(limit, offset, filters, sortField, sortDirection);
-  }, [limit, offset, filters, sortField, sortDirection, fetchData]);
+  }, [limit, offset, filters, sortField, sortDirection]);
 
   const handlePageChange = (newLimit: number, newOffset: number) => {
     setLimit(newLimit);
@@ -86,10 +86,10 @@ function SpoolHistory() {
     setOffset(0);
   };
 
-  const handleFilterChange = (newFilters: Record<string, string>) => {
+  const handleFilterChange = useCallback((newFilters: Record<string, string>) => {
     setFilters(newFilters);
     setOffset(0); // Сбрасываем offset при изменении фильтров
-  };
+  }, []);
 
   const handleRowClick = (row: any) => {
     setSelectedRow(row);

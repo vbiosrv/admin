@@ -3,6 +3,7 @@ import Modal from '../components/Modal';
 import { Save, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import UserSelect from '../components/UserSelect';
+import ServiceSelect from '../components/ServiceSelect';
 
 interface WithdrawModalProps {
   open: boolean;
@@ -74,7 +75,7 @@ export default function WithdrawModal({
       <button
         onClick={handleSave}
         disabled={saving}
-        className="px-4 py-2 rounded flex items-center gap-2 disabled:opacity-50"
+        className="px-4 py-2 rounded flex items-center gap-2 btn-success disabled:opacity-50"
         style={{
           backgroundColor: 'var(--accent-primary)',
           color: 'var(--accent-text)',
@@ -114,13 +115,12 @@ export default function WithdrawModal({
           <label className="w-32 text-sm font-medium shrink-0" style={labelStyles}>
             Услуга
           </label>
-          <input
-            type="text"
-            value={formData.service?.name || formData.service_id || ''}
-            readOnly
-            className="flex-1 px-3 py-2 text-sm rounded border opacity-60"
-            style={inputStyles}
-          />
+          <div className="flex-1">
+            <ServiceSelect
+              value={formData.service_id} 
+              readonly
+            />
+          </div>
         </div>
 
         {/* Цена и Количество */}

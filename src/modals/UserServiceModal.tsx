@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Modal from '../components/Modal';
 import ConfirmModal from '../components/ConfirmModal';
-import { Save, Trash2, X, Loader2, ChevronDown } from 'lucide-react';
+import WithdrawModal from './WithdrawModal';
+import { Save, Trash2, X, Loader2, ChevronDown, Receipt } from 'lucide-react';
 import toast from 'react-hot-toast';
 import JsonEditor from '../components/JsonEditor';
 import UserSelect from '../components/UserSelect';
@@ -44,6 +45,8 @@ export default function UserServiceModal({
   const [contentReady, setContentReady] = useState(false);
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
+  const [withdrawData, setWithdrawData] = useState<Record<string, any> | null>(null);
   
   const statusMenuRef = useRef<HTMLDivElement>(null);
 
@@ -196,13 +199,46 @@ export default function UserServiceModal({
           status,
         }),
       });
-      toast.success('Статус изменён');
+      toast.success('Статус изменен');
       onRefresh?.();
       setFormData(prev => ({ ...prev, status }));
     } catch (error) {
-      console.error('Ошибка смены статуса:', error);
-      toast.error('Ошибка смены статуса');
+      console.error('Ошибка изменения статуса:', error);
+      toast.error('Ошибка изменения статуса');
     }
+  };
+
+  // Открытие модалки списания
+  const handleOpenWithdrawModal = async () => {
+    if (!formData.user_service_id) return;
+    
+    try {
+      // Загружаем последнее списание для этой услуги
+      const res = await shm_request(
+        `/shm/v1/admin/user/service/withdraw?user_service_id=${formData.user_service_id}&limit=1&sort_field=withdraw_date&sort_direction=desc`
+      );
+      const data = res.data || res;
+      const withdraws = Array.isArray(data) ? data : [];
+      
+      if (withdraws.length > 0) {
+        setWithdrawData(withdraws[0]);
+        setWithdrawModalOpen(true);
+      } else {
+        toast.error('Списания не найдены');
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки списания:', error);
+      toast.error('Ошибка загрузки списания');
+    }
+  };
+
+  const handleSaveWithdraw = async (withdrawData: Record<string, any>) => {
+    await shm_request('/shm/v1/admin/user/service/withdraw', {
+      method: 'POST',
+      body: JSON.stringify(withdrawData),
+    });
+    toast.success('Списание обновлено');
+    onRefresh?.();
   };
 
   const inputStyles = {
@@ -248,7 +284,7 @@ export default function UserServiceModal({
         <button
           onClick={handleSave}
           disabled={saving}
-          className="px-4 py-2 rounded flex items-center gap-2"
+          className="px-4 py-2 rounded flex items-center gap-2 btn-success disabled:opacity-50"
           style={{
             backgroundColor: 'var(--accent-primary)',
             color: 'var(--accent-text)',
@@ -301,7 +337,6 @@ export default function UserServiceModal({
             <ServiceSelect 
               value={formData.service_id} 
               readonly 
-              onLoadingChange={setLoadingUser}
               onServiceUpdated={onRefresh}
             />
           </div>
@@ -411,13 +446,30 @@ export default function UserServiceModal({
             <label className="w-32 text-sm font-medium shrink-0" style={labelStyles}>
               Действует до
             </label>
-            <input
-              type="text"
-              value={formData.expire || ''}
-              disabled
-              className="flex-1 px-3 py-2 text-sm rounded border opacity-60"
-              style={inputStyles}
-            />
+            <div className="flex-1 flex items-center gap-2">
+              <input
+                type="text"
+                value={formData.expire || ''}
+                disabled
+                className="flex-1 px-3 py-2 text-sm rounded border opacity-60"
+                style={inputStyles}
+              />
+              {formData.expire && (
+                <button
+                  type="button"
+                  onClick={handleOpenWithdrawModal}
+                  className="p-2 rounded border hover:opacity-80 transition-opacity shrink-0"
+                  style={{
+                    backgroundColor: 'var(--theme-button-secondary-bg)',
+                    borderColor: 'var(--theme-button-secondary-border)',
+                    color: 'var(--theme-button-secondary-text)',
+                  }}
+                  title="Списания"
+                >
+                  <Receipt className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -472,6 +524,14 @@ export default function UserServiceModal({
         cancelText="Отмена"
         variant="danger"
         loading={deleting}
+      />
+
+      {/* Модалка списания */}
+      <WithdrawModal
+        open={withdrawModalOpen}
+        onClose={() => setWithdrawModalOpen(false)}
+        data={withdrawData}
+        onSave={handleSaveWithdraw}
       />
     </Modal>
   );

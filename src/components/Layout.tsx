@@ -181,6 +181,7 @@ function Layout() {
   const { colors, applyTheme } = useThemeStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openMenus, setOpenMenus] = useState<string[]>(['Пользователи']);
+  const [manuallyClosed, setManuallyClosed] = useState<string[]>([]);
 
   useEffect(() => {
     fetchBranding();
@@ -205,11 +206,28 @@ function Layout() {
   };
 
   const toggleMenu = (name: string) => {
-    setOpenMenus(prev => 
-      prev.includes(name) 
-        ? prev.filter(n => n !== name) 
-        : [...prev, name]
-    );
+    setOpenMenus(prev => {
+      const isCurrentlyOpen = prev.includes(name);
+      
+      if (isCurrentlyOpen) {
+        // Закрываем меню и запоминаем, что оно было закрыто вручную
+        setManuallyClosed(closed => [...closed, name]);
+        return prev.filter(n => n !== name);
+      } else {
+        // Открываем новое меню
+        setManuallyClosed(closed => closed.filter(n => n !== name));
+        
+        // Закрываем все остальные меню, кроме тех что с активной страницей и не были закрыты вручную
+        const activeMenus = navigation
+          .filter(item => 
+            item.children?.some(child => isActive(child.href)) && 
+            !manuallyClosed.includes(item.name)
+          )
+          .map(item => item.name);
+        
+        return [name, ...activeMenus.filter(m => m !== name)];
+      }
+    });
   };
 
   return (
@@ -290,7 +308,10 @@ function Layout() {
                   <button
                     onClick={() => toggleMenu(item.name)}
                     className={`nav-item w-full`}
-                    style={{ color: active ? 'var(--theme-sidebar-text-active)' : undefined }}
+                    style={{ 
+                      color: active ? 'var(--theme-sidebar-text-active)' : undefined,
+                      borderLeft: active ? '2px solid var(--theme-primary-color)' : undefined,
+                    }}
                   >
                     <Icon className="w-5 h-5" />
                     <span className="flex-1 text-left">{item.name}</span>
@@ -318,6 +339,7 @@ function Layout() {
                             backgroundColor: isActive(child.href) 
                               ? 'var(--theme-sidebar-item-active-bg)' 
                               : 'transparent',
+                            borderLeft: isActive(child.href) ? '2px solid var(--theme-primary-color)' : undefined,
                           }}
                         >
                           {child.name}

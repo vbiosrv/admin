@@ -66,7 +66,7 @@ function UserServices() {
 
   useEffect(() => {
     fetchData(limit, offset, filters, sortField, sortDirection);
-  }, [limit, offset, filters, sortField, sortDirection, fetchData]);
+  }, [limit, offset, filters, sortField, sortDirection]);
 
   const handlePageChange = (newLimit: number, newOffset: number) => {
     setLimit(newLimit);
@@ -79,10 +79,17 @@ function UserServices() {
     setOffset(0);
   };
 
-  const handleFilterChange = (newFilters: Record<string, string>) => {
-    setFilters(newFilters);
-    setOffset(0);
-  };
+  const handleFilterChange = useCallback((newFilters: Record<string, string>) => {
+    setFilters(prevFilters => {
+      // Проверяем, действительно ли фильтры изменились
+      const filtersChanged = JSON.stringify(prevFilters) !== JSON.stringify(newFilters);
+      if (filtersChanged) {
+        setOffset(0);
+        return newFilters;
+      }
+      return prevFilters;
+    });
+  }, []);
 
   const handleRowClick = (row: any) => {
     setSelectedRow(row);

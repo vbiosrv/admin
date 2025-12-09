@@ -61,7 +61,7 @@ function Bonuses() {
 
   useEffect(() => {
     fetchData(limit, offset, filters, sortField, sortDirection);
-  }, [limit, offset, filters, sortField, sortDirection, fetchData]);
+  }, [limit, offset, filters, sortField, sortDirection]);
 
   const handlePageChange = (newLimit: number, newOffset: number) => {
     setLimit(newLimit);
@@ -74,10 +74,10 @@ function Bonuses() {
     setOffset(0);
   };
 
-  const handleFilterChange = (newFilters: Record<string, string>) => {
+  const handleFilterChange = useCallback((newFilters: Record<string, string>) => {
     setFilters(newFilters);
     setOffset(0);
-  };
+  }, []);
 
   const handleRowClick = (row: any) => {
     setSelectedRow(row);
