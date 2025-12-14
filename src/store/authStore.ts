@@ -10,34 +10,36 @@ export interface User {
 
 interface AuthState {
   user: User | null;
-  credentials: string | null; // base64 encoded login:password
-  setAuth: (user: User, credentials: string) => void;
+  sessionId: string | null;
+  setAuth: (user: User, sessionId: string) => void;
   logout: () => void;
   isAuthenticated: () => boolean;
   isAdmin: () => boolean;
-  getAuthHeader: () => string | null;
+  getSessionId: () => string | null;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
-      credentials: null,
-      setAuth: (user, credentials) => {
-        set({ user, credentials });
+      sessionId: null,
+      setAuth: (user, sessionId) => {
+        set({ user, sessionId });
       },
       logout: () => {
-        set({ user: null, credentials: null });
+        set({ user: null, sessionId: null });
       },
-      isAuthenticated: () => !!get().credentials,
+      isAuthenticated: () => !!get().sessionId,
       isAdmin: () => get().user?.gid === 1,
-      getAuthHeader: () => {
-        const creds = get().credentials;
-        return creds ? `Basic ${creds}` : null;
-      },
+      getSessionId: () => get().sessionId,
     }),
     {
       name: 'shm-auth-storage',
+      // Явно указываем, какие поля сохранять
+      partialize: (state) => ({
+        user: state.user,
+        sessionId: state.sessionId,
+      }),
     }
   )
 );

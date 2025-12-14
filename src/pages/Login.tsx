@@ -30,8 +30,8 @@ function Login() {
     
     setIsLoading(true);
     try {
-      const { user, credentials } = await shm_login(login, password);
-      setAuth(user, credentials);
+      const { user, sessionId } = await shm_login(login, password);
+      setAuth(user, sessionId);
       toast.success('Успешный вход!');
       navigate('/');
     } catch (error: any) {

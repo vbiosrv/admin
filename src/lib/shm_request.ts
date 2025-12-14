@@ -1,13 +1,13 @@
 import { useAuthStore } from '../store/authStore';
 
 export async function shm_request<T = any>(url: string, options?: RequestInit): Promise<T> {
-  const authHeader = useAuthStore.getState().getAuthHeader();
+  const sessionId = useAuthStore.getState().getSessionId();
   
   const response = await fetch(url, {
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      ...(authHeader ? { 'Authorization': authHeader } : {}),
+      ...(sessionId ? { 'session-id': sessionId } : {}),
       ...(options?.headers || {}),
     },
     ...options,
@@ -53,12 +53,10 @@ export function normalizeListResponse<T = any>(res: any): ApiListResponse<T> {
 
 // Функция для авторизации
 export async function shm_login(login: string, password: string): Promise<any> {
-  const credentials = btoa(`${login}:${password}`);
-  
-  const response = await fetch('/shm/v1/user', {
+  // POST запрос для получения session_id
+  const response = await fetch('/shm/v1/user/auth', {
     method: 'POST',
     headers: {
-      'Authorization': `Basic ${credentials}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ login, password }),
@@ -69,5 +67,34 @@ export async function shm_login(login: string, password: string): Promise<any> {
   }
   
   const data = await response.json();
-  return { user: data.data?.[0] || data, credentials };
+  const sessionId = data.id;
+  
+  if (!sessionId) {
+    throw new Error('Не получен session_id');
+  }
+  
+  // Получаем данные пользователя с использованием session_id
+  const userResponse = await fetch('/shm/v1/user', {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'session-id': sessionId,
+    },
+  });
+  
+  if (userResponse.ok) {
+    const userData = await userResponse.json();
+    const user = userData.data?.[0] || userData;
+    return { user, sessionId };
+  }
+  
+  // Если не удалось получить данные пользователя, возвращаем минимальные данные
+  return { 
+    user: { 
+      user_id: 0, 
+      login, 
+      gid: 1 // Предполагаем, что это админ
+    }, 
+    sessionId 
+  };
 }
