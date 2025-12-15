@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import {
   TrendingUp,
   DollarSign,
@@ -26,16 +26,7 @@ import { StatCard, StatCardGrid, ChartCard, MetricRow, EmptyState } from '../com
 import { AreaLineChart, BarChart, MultiLineChart } from '../components/charts';
 import { useCacheStore } from '../store/cacheStore';
 import {
-  fetchPaymentStats,
-  fetchUserServiceStats,
-  fetchUserStats,
-  fetchRevenueStats,
-  fetchTaskStats,
-  fetchTopServices,
-  fetchServerStats,
-  fetchFinancialMetrics,
-  fetchTopCustomers,
-  fetchMRRStats,
+  fetchAnalytics,
   PaymentStats,
   UserServiceStats,
   UserStats,
@@ -43,7 +34,12 @@ import {
   FinancialMetrics,
   TopCustomer,
   MRRStats,
+  TaskStats,
+  TopService,
+  ServerStats,
+  AnalyticsData,
 } from '../lib/analyticsApi';
+import { format } from 'date-fns';
 
 type TimePeriod = 7 | 14 | 30 | 90 | 'month';
 
@@ -52,157 +48,118 @@ function Analytics() {
   const [loading, setLoading] = useState(true);
   const [periodLoading, setPeriodLoading] = useState(false);
   const [isBackgroundRefresh, setIsBackgroundRefresh] = useState(false);
-  const backgroundRefreshRef = useRef(false);
   const [period, setPeriod] = useState<TimePeriod>('month');
   const [paymentStats, setPaymentStats] = useState<PaymentStats | null>(null);
   const [userServiceStats, setUserServiceStats] = useState<UserServiceStats | null>(null);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [revenueStats, setRevenueStats] = useState<RevenueStats | null>(null);
-  const [taskStats, setTaskStats] = useState<{ pending: number; completed: number; failed: number; byEvent: { name: string; value: number }[] } | null>(null);
-  const [topServices, setTopServices] = useState<{ name: string; count: number; revenue: number }[]>([]);
-  const [serverStats, setServerStats] = useState<{ total: number; byGroup: { name: string; value: number }[] } | null>(null);
+  const [taskStats, setTaskStats] = useState<TaskStats | null>(null);
+  const [topServices, setTopServices] = useState<TopService[]>([]);
+  const [serverStats, setServerStats] = useState<ServerStats | null>(null);
   const [financialMetrics, setFinancialMetrics] = useState<FinancialMetrics | null>(null);
   const [topCustomers, setTopCustomers] = useState<TopCustomer[]>([]);
   const [mrrStats, setMrrStats] = useState<MRRStats | null>(null);
 
-  const periodCacheKey = `analytics_period_${period}`;
-  const staticCacheKey = 'analytics_static';
-
-  // Загрузка данных, не зависящих от периода (только при монтировании)
-  const fetchStaticData = async (forceRefresh = false) => {
+  // Загрузка всех данных за период (теперь один запрос вместо множества)
+  const fetchAllData = async (forceRefresh = false) => {
+    const cacheKey = `analytics_${period}`;
+    
     if (!forceRefresh && settings.enabled) {
-      const cached = getCached(staticCacheKey);
+      const cached = getCached(cacheKey);
       if (cached) {
+        setPaymentStats(cached.paymentStats);
         setUserServiceStats(cached.userServiceStats);
+        setUserStats(cached.userStats);
+        setRevenueStats(cached.revenueStats);
         setTaskStats(cached.taskStats);
         setTopServices(cached.topServices);
         setServerStats(cached.serverStats);
         setFinancialMetrics(cached.financialMetrics);
         setTopCustomers(cached.topCustomers);
         setMrrStats(cached.mrrStats);
-        
-        // Проверяем, нужно ли фоновое обновление
-        if (needsBackgroundRefresh(staticCacheKey) && !backgroundRefreshRef.current) {
-          backgroundRefreshRef.current = true;
-          setIsBackgroundRefresh(true);
-          setTimeout(() => {
-            fetchStaticData(true).finally(() => {
-              setIsBackgroundRefresh(false);
-              backgroundRefreshRef.current = false;
-            });
-          }, 100);
-        }
         return;
       }
     }
     
     try {
-      const [
-        userServices,
-        tasks,
-        services,
-        servers,
-        financial,
-        customers,
-        mrr,
-      ] = await Promise.all([
-        fetchUserServiceStats(),
-        fetchTaskStats(),
-        fetchTopServices(),
-        fetchServerStats(),
-        fetchFinancialMetrics(),
-        fetchTopCustomers(10),
-        fetchMRRStats(),
-      ]);
-
-      const data = {
-        userServiceStats: userServices,
-        taskStats: tasks,
-        topServices: services,
-        serverStats: servers,
-        financialMetrics: financial,
-        topCustomers: customers,
-        mrrStats: mrr,
+      const analytics = await fetchAnalytics(period);
+      
+      // Форматируем timeline для отображения
+      const paymentStats: PaymentStats = {
+        ...analytics.payments,
+        timeline: analytics.payments.timeline.map(t => ({
+          ...t,
+          label: format(new Date(t.date), 'dd.MM'),
+        })),
       };
-
-      setUserServiceStats(userServices);
-      setTaskStats(tasks);
-      setTopServices(services);
-      setServerStats(servers);
-      setFinancialMetrics(financial);
-      setTopCustomers(customers);
-      setMrrStats(mrr);
-
+      
+      const userStats: UserStats = {
+        ...analytics.users,
+        timeline: analytics.users.timeline.map(t => ({
+          ...t,
+          label: format(new Date(t.date), 'dd.MM'),
+        })),
+      };
+      
+      const revenueStats: RevenueStats = {
+        ...analytics.revenue,
+        revenueTimeline: analytics.revenue.revenueTimeline.map(t => ({
+          ...t,
+          label: format(new Date(t.date), 'dd.MM'),
+        })),
+        withdrawTimeline: analytics.revenue.withdrawTimeline.map(t => ({
+          ...t,
+          label: format(new Date(t.date), 'dd.MM'),
+        })),
+      };
+      
+      const userServiceStats: UserServiceStats = {
+        ...analytics.userServices,
+        timeline: analytics.userServices.timeline.map(t => ({
+          ...t,
+          label: format(new Date(t.date), 'dd.MM'),
+        })),
+      };
+      
+      const data = {
+        paymentStats,
+        userServiceStats,
+        userStats,
+        revenueStats,
+        taskStats: analytics.tasks,
+        topServices: analytics.topServices,
+        serverStats: analytics.servers,
+        financialMetrics: analytics.financial,
+        topCustomers: analytics.topCustomers,
+        mrrStats: analytics.mrr,
+      };
+      
+      setPaymentStats(paymentStats);
+      setUserServiceStats(userServiceStats);
+      setUserStats(userStats);
+      setRevenueStats(revenueStats);
+      setTaskStats(analytics.tasks);
+      setTopServices(analytics.topServices);
+      setServerStats(analytics.servers);
+      setFinancialMetrics(analytics.financial);
+      setTopCustomers(analytics.topCustomers);
+      setMrrStats(analytics.mrr);
+      
       if (settings.enabled) {
-        setCache(staticCacheKey, data);
+        setCache(cacheKey, data);
       }
     } catch (error) {
-      console.error('Error fetching static data:', error);
+      console.error('Error fetching analytics data:', error);
     }
   };
 
-  // Загрузка данных, зависящих от периода
-  const fetchPeriodData = async (forceRefresh = false) => {
-    if (!forceRefresh && settings.enabled) {
-      const cached = getCached(periodCacheKey);
-      if (cached) {
-        setPaymentStats(cached.paymentStats);
-        setUserStats(cached.userStats);
-        setRevenueStats(cached.revenueStats);
-        setPeriodLoading(false);
-        
-        // Проверяем, нужно ли фоновое обновление
-        if (needsBackgroundRefresh(periodCacheKey) && !backgroundRefreshRef.current) {
-          backgroundRefreshRef.current = true;
-          setIsBackgroundRefresh(true);
-          setTimeout(() => {
-            fetchPeriodData(true).finally(() => {
-              setIsBackgroundRefresh(false);
-              backgroundRefreshRef.current = false;
-            });
-          }, 100);
-        }
-        return;
-      }
-    }
 
-    setPeriodLoading(true);
-    
-    try {
-      const [payments, users, revenue] = await Promise.all([
-        fetchPaymentStats(period),
-        fetchUserStats(period),
-        fetchRevenueStats(period),
-      ]);
-
-      const data = {
-        paymentStats: payments,
-        userStats: users,
-        revenueStats: revenue,
-      };
-
-      setPaymentStats(payments);
-      setUserStats(users);
-      setRevenueStats(revenue);
-
-      if (settings.enabled) {
-        setCache(periodCacheKey, data);
-      }
-    } catch (error) {
-      console.error('Error fetching period data:', error);
-    } finally {
-      setPeriodLoading(false);
-    }
-  };
 
   // Начальная загрузка (при монтировании)
   useEffect(() => {
     const loadInitialData = async () => {
       setLoading(true);
-      await Promise.all([
-        fetchStaticData(false),
-        fetchPeriodData(false),
-      ]);
+      await fetchAllData(false);
       setLoading(false);
     };
     
@@ -211,8 +168,8 @@ function Analytics() {
 
   // Обновление при изменении периода
   useEffect(() => {
-    backgroundRefreshRef.current = false;
-    fetchPeriodData(false);
+    setPeriodLoading(true);
+    fetchAllData(false).finally(() => setPeriodLoading(false));
   }, [period]);
 
   // Автоматическое обновление при активной вкладке
@@ -224,28 +181,26 @@ function Analytics() {
 
     const handleVisibilityChange = () => {
       isVisible = !document.hidden;
+      const cacheKey = `analytics_${period}`;
       
       if (isVisible && settings.backgroundRefresh) {
         // Вкладка стала активной - проверяем кеш и запускаем интервал
-        if (needsBackgroundRefresh(staticCacheKey)) {
-          fetchStaticData(true);
-        }
-        if (needsBackgroundRefresh(periodCacheKey)) {
-          fetchPeriodData(true);
+        if (needsBackgroundRefresh(cacheKey)) {
+          fetchAllData(true);
         }
         
-        // Запускаем периодическое обновление (проверка каждые 30 секунд)
+        // Запускаем периодическое обновление (проверка каждые 10 секунд)
         if (intervalId) clearInterval(intervalId);
         intervalId = window.setInterval(() => {
           if (document.hidden) return; // Двойная проверка
           
-          if (needsBackgroundRefresh(staticCacheKey)) {
-            fetchStaticData(true);
+          if (needsBackgroundRefresh(cacheKey)) {
+            setIsBackgroundRefresh(true);
+            fetchAllData(true).finally(() => {
+              setIsBackgroundRefresh(false);
+            });
           }
-          if (needsBackgroundRefresh(periodCacheKey)) {
-            fetchPeriodData(true);
-          }
-        }, 30000); // Проверяем каждые 30 секунд
+        }, 10000); // Проверяем каждые 10 секунд
       } else if (intervalId) {
         // Вкладка стала неактивной - останавливаем обновление
         clearInterval(intervalId);
@@ -255,14 +210,15 @@ function Analytics() {
 
     // Проверяем начальное состояние и запускаем интервал если вкладка активна
     if (!document.hidden) {
+      const cacheKey = `analytics_${period}`;
       intervalId = window.setInterval(() => {
         if (document.hidden) return;
         
-        if (needsBackgroundRefresh(staticCacheKey)) {
-          fetchStaticData(true);
-        }
-        if (needsBackgroundRefresh(periodCacheKey)) {
-          fetchPeriodData(true);
+        if (needsBackgroundRefresh(cacheKey)) {
+          setIsBackgroundRefresh(true);
+          fetchAllData(true).finally(() => {
+            setIsBackgroundRefresh(false);
+          });
         }
       }, 30000); // Проверяем каждые 30 секунд
     }
@@ -289,8 +245,8 @@ function Analytics() {
   const revenueComparisonData = revenueStats ? 
     revenueStats.revenueTimeline.map((item, index) => ({
       ...item,
-      revenue: item.value,
-      withdraws: revenueStats.withdrawTimeline[index]?.value || 0,
+      revenue: item.total,
+      withdraws: revenueStats.withdrawTimeline[index]?.total || 0,
     })) : [];
 
   return (
@@ -300,7 +256,7 @@ function Analytics() {
         <div className="flex items-center gap-2">
           <h2 className="text-xl font-bold">Аналитика</h2>
           <Help content="<b>Аналитика</b>: детальная статистика и визуализация данных системы." />
-          {settings.enabled && !loading && !periodLoading && getCached(periodCacheKey) && (
+          {settings.enabled && !loading && !periodLoading && (
             <span 
               className="text-xs px-2 py-1 rounded-full flex items-center gap-1"
               style={{ 
@@ -354,7 +310,7 @@ function Analytics() {
           </div>
           {}
           <button
-            onClick={() => fetchPeriodData(true)}
+            onClick={() => fetchAllData(true)}
             disabled={loading || periodLoading}
             className="btn-secondary flex items-center gap-2"
           >
@@ -527,7 +483,7 @@ function Analytics() {
         >
           {userServiceStats && userServiceStats.byStatus.length > 0 ? (
             <BarChart
-              data={userServiceStats.byStatus}
+              data={userServiceStats.byStatus.map(s => ({ name: s.status, value: s.count }))}
               height={280}
               layout="vertical"
             />
@@ -549,7 +505,7 @@ function Analytics() {
         >
           {paymentStats && paymentStats.timeline.length > 0 ? (
             <AreaLineChart
-              data={paymentStats.timeline}
+              data={paymentStats.timeline.map(t => ({ date: t.date, value: t.total, label: t.label }))}
               height={250}
               color="#22d3ee"
               valueFormatter={(v) => `${v.toLocaleString()} ₽`}
@@ -570,7 +526,7 @@ function Analytics() {
         >
           {userStats && userStats.timeline.length > 0 ? (
             <AreaLineChart
-              data={userStats.timeline}
+              data={userStats.timeline.map(t => ({ date: t.date, value: t.count, label: t.label }))}
               height={250}
               color="#3b82f6"
               averageLine
@@ -604,15 +560,15 @@ function Analytics() {
 
         {}
         <ChartCard
-          title="Платежные системы"
-          subtitle="Распределение по сумме"
+          title="Платёжные системы"
+          subtitle="Распределение платежей по системам"
           icon={CreditCard}
           iconColor="text-emerald-400"
           loading={loading}
         >
           {paymentStats && paymentStats.byPaySystem.length > 0 ? (
             <BarChart
-              data={paymentStats.byPaySystem}
+              data={paymentStats.byPaySystem.map(ps => ({ name: ps.name, value: ps.total }))}
               height={280}
               layout="vertical"
               valueFormatter={(v) => `${v.toLocaleString()} ₽`}
@@ -658,13 +614,13 @@ function Analytics() {
           {userServiceStats && userServiceStats.byService.length > 0 ? (
             <div className="max-h-72 overflow-y-auto">
               {userServiceStats.byService.map((service, idx) => {
-                const total = userServiceStats.byService.reduce((s, i) => s + i.value, 0);
+                const total = userServiceStats.byService.reduce((s, i) => s + i.count, 0);
                 return (
                   <MetricRow
                     key={service.name}
                     label={service.name}
-                    value={service.value}
-                    percentage={(service.value / total) * 100}
+                    value={service.count}
+                    percentage={(service.count / total) * 100}
                     color={[
                       '#22d3ee', '#8b5cf6', '#22c55e', '#f59e0b', '#ef4444',
                       '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1',
@@ -708,7 +664,7 @@ function Analytics() {
           value={userStats?.total ?? '...'}
           icon={Users}
           color="blue"
-          subtitle={`Активных за 7 дней: ${userStats?.activeUsers ?? 0}`}
+          subtitle={`Новых за период: ${userStats?.newUsers ?? 0}`}
           loading={loading}
         />
         <StatCard
@@ -777,16 +733,16 @@ function Analytics() {
                         )}
                       </td>
                       <td className="py-2 px-3 font-medium" style={{ color: 'var(--theme-content-text)' }}>
-                        {customer.login}
+                        {customer.username}
                       </td>
                       <td className="py-2 px-3 text-right font-semibold" style={{ color: '#22c55e' }}>
-                        {Math.round(customer.totalPayments).toLocaleString()} ₽
+                        {Math.round(customer.totalSpent).toLocaleString()} ₽
                       </td>
                       <td className="py-2 px-3 text-right" style={{ color: 'var(--theme-content-text-muted)' }}>
-                        {customer.paymentsCount}
+                        {customer.paymentCount}
                       </td>
                       <td className="py-2 px-3 text-right" style={{ color: 'var(--theme-content-text-muted)' }}>
-                        {customer.servicesCount}
+                        -
                       </td>
                     </tr>
                   ))}

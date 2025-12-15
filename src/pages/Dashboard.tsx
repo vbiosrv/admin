@@ -19,24 +19,34 @@ import {
   ArrowUpRight,
   ArrowDownRight,
 } from 'lucide-react';
-import { shm_request, normalizeListResponse } from '../lib/shm_request';
 import { StatCard, StatCardGrid, ChartCard } from '../components/analytics';
 import { AreaLineChart, BarChart } from '../components/charts';
 import { useCacheStore } from '../store/cacheStore';
 import {
-  fetchMainStats,
-  fetchPaymentStats,
-  fetchUserServiceStats,
-  fetchRevenueStats,
-  fetchFinancialMetrics,
-  fetchMRRStats,
+  fetchDashboardAnalytics,
+  DashboardAnalytics,
   AnalyticsStats,
   PaymentStats,
   UserServiceStats,
   RevenueStats,
   FinancialMetrics,
   MRRStats,
-} from '../lib/analyticsApi';
+} from '../lib/dashboardApi';
+
+function getStatusColor(status: string): string {
+  const colors: Record<string, string> = {
+    ACTIVE: '#22c55e',
+    active: '#22c55e',
+    BLOCK: '#ef4444',
+    block: '#ef4444',
+    NOT_PAID: '#f59e0b',
+    not_paid: '#f59e0b',
+    PROGRESS: '#3b82f6',
+    progress: '#3b82f6',
+    WAIT_PAYMENT: '#f59e0b',
+  };
+  return colors[status] || '#6b7280';
+}
 
 function Dashboard() {
   const { settings, get: getCached, set: setCache, needsBackgroundRefresh } = useCacheStore();
@@ -78,25 +88,73 @@ function Dashboard() {
     }
     
     try {
-      const [
-        mainStats,
-        payments,
-        services,
-        revenue,
-        financial,
-        mrr,
-        recentPaysRes,
-        tasksRes,
-      ] = await Promise.all([
-        fetchMainStats(),
-        fetchPaymentStats(7),
-        fetchUserServiceStats(),
-        fetchRevenueStats(7),
-        fetchFinancialMetrics(),
-        fetchMRRStats(),
-        shm_request('/shm/v1/admin/user/pay?limit=5&sort_field=date&sort_direction=DESC').catch(() => ({ data: [] })),
-        shm_request('/shm/v1/admin/spool?limit=5').catch(() => ({ data: [] })),
-      ]);
+      // ОДИН запрос вместо 36!
+      const analytics = await fetchDashboardAnalytics(7);
+      
+      // Преобразуем данные в старый формат для совместимости
+      const mainStats: AnalyticsStats = {
+        totalUsers: analytics.counts.totalUsers,
+        totalServices: analytics.counts.totalServices,
+        totalServers: analytics.counts.totalServers,
+        activeUserServices: analytics.counts.activeUserServices,
+        totalRevenue: analytics.revenue.totalRevenue,
+        recentPayments: analytics.counts.recentPayments,
+        totalWithdraws: analytics.counts.totalWithdraws,
+        pendingTasks: analytics.counts.pendingTasks,
+      };
+      
+      const payments: PaymentStats = {
+        total: analytics.payments.total,
+        count: analytics.payments.count,
+        byPaySystem: analytics.payments.byPaySystem,
+        timeline: analytics.payments.timeline.map(t => ({
+          ...t,
+          label: new Date(t.date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }),
+        })),
+      };
+      
+      const services: UserServiceStats = {
+        total: analytics.services.total,
+        byStatus: analytics.services.byStatus.map(s => ({
+          ...s,
+          color: getStatusColor(s.name),
+        })),
+        byService: analytics.services.topServices.map(s => ({ name: s.name, value: s.count })),
+        timeline: [],
+      };
+      
+      const revenue: RevenueStats = {
+        totalRevenue: analytics.revenue.totalRevenue,
+        totalWithdraws: analytics.revenue.totalWithdraws,
+        netRevenue: analytics.revenue.netRevenue,
+        revenueTimeline: analytics.revenue.revenueTimeline.map(t => ({
+          ...t,
+          label: new Date(t.date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }),
+        })),
+        withdrawTimeline: analytics.revenue.withdrawTimeline.map(t => ({
+          ...t,
+          label: new Date(t.date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }),
+        })),
+      };
+      
+      const financial: FinancialMetrics = {
+        arpu: analytics.financial.arpu,
+        arppu: analytics.financial.arppu,
+        ltv: analytics.financial.arpu * 12,
+        churnRate: 0,
+        payingUsersCount: analytics.financial.payingUsersCount,
+        totalUsers: analytics.financial.totalUsers,
+        avgRevenuePerPayment: analytics.payments.count > 0 ? analytics.payments.total / analytics.payments.count : 0,
+        avgPaymentsPerUser: analytics.financial.payingUsersCount > 0 ? analytics.payments.count / analytics.financial.payingUsersCount : 0,
+        conversionRate: analytics.financial.conversionRate,
+      };
+      
+      const mrr: MRRStats = {
+        mrr: analytics.mrr.mrr,
+        activeSubscriptions: analytics.mrr.activeSubscriptions,
+        avgSubscriptionValue: analytics.mrr.avgSubscriptionValue,
+        mrrGrowth: 0,
+      };
 
       const data = {
         stats: mainStats,

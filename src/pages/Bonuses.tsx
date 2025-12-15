@@ -7,9 +7,9 @@ import { Plus } from 'lucide-react';
 import { useSelectedUserStore } from '../store/selectedUserStore';
 
 const bonusColumns = [
-  { key: 'bonus_id', label: 'ID', visible: true, sortable: true },
+  { key: 'id', label: 'ID', visible: false, sortable: true },
   { key: 'user_id', label: 'User ID', visible: true, sortable: true },
-  { key: 'amount', label: 'Сумма', visible: true, sortable: true },
+  { key: 'bonus', label: 'Сумма', visible: true, sortable: true },
   { key: 'date', label: 'Дата', visible: true, sortable: true },
   { key: 'comment', label: 'Комментарий', visible: true, sortable: false },
 ];
