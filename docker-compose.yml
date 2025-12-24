@@ -1,6 +1,6 @@
 services:
   admin-2:
-    image: "bkeenke/shm-admin-2:latest"
+    image: "zakachkin/shm-admin-2:latest"
     pull_policy: always
     restart: always
     environment:
