@@ -88,7 +88,19 @@ function UserServices() {
     shm_request(url)
       .then(res => {
         const { data: items, total: count } = normalizeListResponse(res);
-        setData(items);
+        if (sf === 'status' && sd) {
+          const statusOrder = ['ACTIVE', 'BLOCK', 'NOT PAID', 'PROGRESS'];
+          const orderMap = new Map(statusOrder.map((status, index) => [status, index]));
+          const sorted = [...items].sort((a, b) => {
+            const aIdx = orderMap.get(a.status) ?? statusOrder.length;
+            const bIdx = orderMap.get(b.status) ?? statusOrder.length;
+            if (aIdx === bIdx) return 0;
+            return sd === 'asc' ? aIdx - bIdx : bIdx - aIdx;
+          });
+          setData(sorted);
+        } else {
+          setData(items);
+        }
         setTotal(count);
       })
       .catch(() => setData([]))
