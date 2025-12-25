@@ -165,7 +165,7 @@ export default function TemplateTestModal({
             value={renderResult}
             readOnly
             className="flex-1 h-full px-3 py-2 text-sm rounded border font-mono"
-            style={{ ...inputStyles, resize: 'none' }}
+            style={{ ...inputStyles, resize: 'none', minHeight: 280 }}
             placeholder="Результат рендера появится здесь..."
           />
         </div>
