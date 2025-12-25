@@ -102,7 +102,7 @@ export default function TemplateTestModal({
       open={open}
       onClose={handleClose}
       title="Тест шаблона"
-      size="lg"
+      size="full"
       footer={renderFooter()}
     >
       <div className="space-y-4">
@@ -173,3 +173,4 @@ export default function TemplateTestModal({
     </Modal>
   );
 }
+
