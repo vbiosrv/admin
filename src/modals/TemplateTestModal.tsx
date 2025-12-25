@@ -102,7 +102,8 @@ export default function TemplateTestModal({
       open={open}
       onClose={handleClose}
       title="Тест шаблона"
-      size="full"
+      size="lg"
+      resizable={true}
       footer={renderFooter()}
     >
       <div className="space-y-4">
@@ -111,7 +112,7 @@ export default function TemplateTestModal({
           <label className="w-32 text-sm font-medium shrink-0" style={labelStyles}>
             Пользователь *
           </label>
-          <div className="shrink-0">
+          <div className="flex-1">
             <UserSelect
               value={userId}
               onChange={(value) => setUserId(value || 1)}
@@ -129,7 +130,7 @@ export default function TemplateTestModal({
             value={usi}
             onChange={(e) => setUsi(e.target.value)}
             className="flex-1 px-3 py-2 text-sm rounded border"
-            style={{ ...inputStyles, resize: 'both', overflow: 'auto' }}
+            style={inputStyles}
             placeholder="Введите USI (опционально)"
           />
         </div>
@@ -160,19 +161,14 @@ export default function TemplateTestModal({
           <label className="w-32 text-sm font-medium shrink-0 pt-2" style={labelStyles}>
             Результат
           </label>
-          <div
-            className="shrink-0"
-            style={{ resize: 'both', overflow: 'auto', maxWidth: '100%', minWidth: 260, minHeight: 120, flex: '0 0 auto', width: '100%' }}
-          >
-            <textarea
-              value={renderResult}
-              readOnly
-              rows={14}
-              className="w-full h-full px-3 py-2 text-sm rounded border font-mono"
-              style={inputStyles}
+          <textarea
+            value={renderResult}
+            readOnly
+            rows={14}
+            className="flex-1 px-3 py-2 text-sm rounded border font-mono"
+            style={inputStyles}
               placeholder="Результат рендера появится здесь..."
-            />
-          </div>
+          />
         </div>
       </div>
     </Modal>
