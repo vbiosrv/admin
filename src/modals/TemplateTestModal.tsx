@@ -111,7 +111,7 @@ export default function TemplateTestModal({
           <label className="w-32 text-sm font-medium shrink-0" style={labelStyles}>
             Пользователь *
           </label>
-          <div className="flex-1">
+          <div className="shrink-0">
             <UserSelect
               value={userId}
               onChange={(value) => setUserId(value || 1)}
@@ -160,18 +160,24 @@ export default function TemplateTestModal({
           <label className="w-32 text-sm font-medium shrink-0 pt-2" style={labelStyles}>
             Результат
           </label>
-          <textarea
-            value={renderResult}
-            readOnly
-            rows={14}
-            className="flex-1 px-3 py-2 text-sm rounded border font-mono"
-            style={{ ...inputStyles, resize: 'both', overflow: 'auto' }}
-            placeholder="Результат рендера появится здесь..."
-          />
+          <div
+            className="shrink-0"
+            style={{ resize: 'both', overflow: 'auto', maxWidth: '100%', minWidth: 260, minHeight: 120, flex: '0 0 auto', width: '100%' }}
+          >
+            <textarea
+              value={renderResult}
+              readOnly
+              rows={14}
+              className="w-full h-full px-3 py-2 text-sm rounded border font-mono"
+              style={inputStyles}
+              placeholder="Результат рендера появится здесь..."
+            />
+          </div>
         </div>
       </div>
     </Modal>
   );
 }
+
 
 
