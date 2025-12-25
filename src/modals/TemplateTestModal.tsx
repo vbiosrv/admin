@@ -130,7 +130,7 @@ export default function TemplateTestModal({
             value={usi}
             onChange={(e) => setUsi(e.target.value)}
             className="flex-1 px-3 py-2 text-sm rounded border"
-            style={inputStyles}
+            style={{ ...inputStyles, resize: 'none' }}
             placeholder="Введите USI (опционально)"
           />
         </div>
