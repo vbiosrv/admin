@@ -25,6 +25,7 @@ import Identities from './pages/Identities';
 import SpoolHistory from './pages/SpoolHistory';
 import UnifiedSettings from './pages/UnifiedSettings';
 import SHMCloud from './pages/SHMCloud';
+import Swagger from './pages/Swagger';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -54,6 +55,7 @@ function App() {
   }, []);
 
   const basename = document.querySelector('base')?.getAttribute('href') || '/';
+  const showSwagger = import.meta.env.VITE_SHOW_SWAGGER === 'true';
 
   return (
     <BrowserRouter basename={basename}>
@@ -83,6 +85,7 @@ function App() {
       />
       <Routes>
         <Route path="/login" element={<Login />} />
+        {showSwagger && <Route path="/swagger" element={<Swagger />} />}
         <Route
           path="/"
           element={

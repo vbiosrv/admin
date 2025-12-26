@@ -108,7 +108,7 @@ const navigation: MenuItem[] = [
   {
     name: 'SHM Cloud',
     href: '/cloud',
-    icon: Wrench
+    icon: Cloud
   },
 ];
 
@@ -191,6 +191,11 @@ function Layout() {
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
   const [selectedData, setSelectedData] = useState<any>(null);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
+
+  const showSwagger = import.meta.env.VITE_SHOW_SWAGGER === 'true';
+  const menuItems = showSwagger
+    ? [...navigation, { name: 'API Swagger', href: '/swagger', icon: FileText }]
+    : navigation;
 
   useEffect(() => {
     fetchBranding();
@@ -328,13 +333,30 @@ function Layout() {
           </div>
 
           {}
+          {/* Navigation */}
           <nav className="flex-1 overflow-y-auto py-4 px-2">
-            {navigation.map((item) => {
+            {menuItems.map((item) => {
               const Icon = item.icon;
               const active = isMenuActive(item);
               const isOpen = openMenus.includes(item.name);
 
               if (item.href && !item.children) {
+                // Swagger открываем в новой вкладке
+                if (item.name === 'API Swagger') {
+                  return (
+                    <a
+                      key={item.name}
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="nav-item"
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="flex-1">{item.name}</span>
+                    </a>
+                  );
+                }
+
                 return (
                   <Link
                     key={item.name}
