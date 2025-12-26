@@ -15,6 +15,7 @@ interface BrandingState {
   loading: boolean;
   loaded: boolean;
   fetchBranding: () => Promise<void>;
+  refetchBranding: () => Promise<void>;
   updateBranding: (settings: Partial<BrandingSettings>) => Promise<void>;
   resetBranding: () => Promise<void>;
 }
@@ -49,14 +50,23 @@ export const useBrandingStore = create<BrandingState>((set, get) => ({
           loginTitle: company.title || company.name || DEFAULT_BRANDING.loginTitle,
         };
         set({ branding, loaded: true });
+        document.title = branding.appTitle;
       } else {
         set({ branding: DEFAULT_BRANDING, loaded: true });
+        document.title = DEFAULT_BRANDING.appTitle;
       }
     } catch (error) {
+      // Тихо игнорируем ошибки (например, 401 для неавторизованных)
       set({ branding: DEFAULT_BRANDING, loaded: true });
+      document.title = DEFAULT_BRANDING.appTitle;
     } finally {
       set({ loading: false });
     }
+  },
+
+  refetchBranding: async () => {
+    set({ loaded: false });
+    await get().fetchBranding();
   },
 
   updateBranding: async (settings) => {

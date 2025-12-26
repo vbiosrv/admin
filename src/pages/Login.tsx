@@ -10,7 +10,7 @@ import { shm_login } from '../lib/shm_request';
 function Login() {
   const navigate = useNavigate();
   const { setAuth } = useAuthStore();
-  const { branding, fetchBranding } = useBrandingStore();
+  const { branding, fetchBranding, refetchBranding } = useBrandingStore();
   const { colors, applyTheme } = useThemeStore();
   const [isLoading, setIsLoading] = useState(false);
   const [login, setLogin] = useState('');
@@ -32,6 +32,7 @@ function Login() {
     try {
       const { user, sessionId } = await shm_login(login, password);
       setAuth(user, sessionId);
+      await refetchBranding();
       toast.success('Успешный вход!');
       navigate('/');
     } catch (error: any) {
