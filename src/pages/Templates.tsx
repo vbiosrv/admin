@@ -88,7 +88,6 @@ function Templates() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
           <h2 className="text-xl font-bold">Шаблоны</h2>
-          <Help content="<b>Шаблоны</b>: список шаблонов для событий и уведомлений." />
         </div>
         <div className="flex gap-2">
           <button

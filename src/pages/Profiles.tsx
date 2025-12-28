@@ -112,7 +112,6 @@ function Profiles() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
           <h2 className="text-xl font-bold">Персональные данные</h2>
-          <Help content="<b>Персональные данные</b>: профили пользователей с дополнительной информацией." />
         </div>
         <button
           onClick={() => setCreateModalOpen(true)}

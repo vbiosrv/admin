@@ -112,7 +112,6 @@ function Events() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
           <h2 className="text-xl font-bold">События услуг</h2>
-          <Help content="<b>События услуг</b>: список событий, связанных с услугами (подключение, отключение и т.д.)." />
         </div>
         <button
           onClick={handleCreate}

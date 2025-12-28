@@ -66,12 +66,12 @@ function CurrencyConverter() {
     setError('');
 
     try {
-      const url = forceUpdate 
-        ? 'shm/v1/admin/cloud/currencies?update=1' 
+      const url = forceUpdate
+        ? 'shm/v1/admin/cloud/currencies?update=1'
         : 'shm/v1/admin/cloud/currencies';
-      
+
       const response = await shm_request(url) as CurrenciesResponse;
-      
+
       if (response.data && response.data[0]) {
         const currenciesData = response.data[0];
         const currenciesArray = Object.values(currenciesData).map((curr): CurrencyWithChanges => ({
@@ -82,9 +82,9 @@ function CurrencyConverter() {
           originalAdditionValue: curr.addition_value || 0,
           hasChanges: false,
         }));
-        
+
         setCurrencies(currenciesArray);
-        
+
         if (forceUpdate) {
           toast.success('Курсы валют обновлены');
         }
@@ -99,12 +99,12 @@ function CurrencyConverter() {
 
   const formatCurrencyName = (currency: Currency) => {
     if (!currency.name) return currency.currency;
-    
+
     // Убираем числительные формы из названий
     const name = currency.name
       .replace(/ых|их|ов|ы|и|а$/g, '')
       .trim();
-    
+
     return `${name} (${currency.currency})`;
   };
 
@@ -121,11 +121,11 @@ function CurrencyConverter() {
 
   const calculateFinalRate = (currency: CurrencyWithChanges): number => {
     const baseRate = currency.value;
-    
+
     if (!currency.addition_type) {
       return baseRate;
     }
-    
+
     switch (currency.addition_type) {
       case 'fixed':
         return currency.addition_value || 0;
@@ -143,10 +143,10 @@ function CurrencyConverter() {
       prev.map((c) => {
         if (c.currency === currency.currency) {
           const typedNewType = newType as '' | 'fixed' | 'numeric' | 'percent';
-          const hasChanges = 
+          const hasChanges =
             typedNewType !== c.originalAdditionType ||
             c.addition_value !== c.originalAdditionValue;
-          
+
           return {
             ...c,
             addition_type: typedNewType,
@@ -162,10 +162,10 @@ function CurrencyConverter() {
     setCurrencies((prev) =>
       prev.map((c) => {
         if (c.currency === currency.currency) {
-          const hasChanges = 
+          const hasChanges =
             c.addition_type !== c.originalAdditionType ||
             newValue !== c.originalAdditionValue;
-          
+
           return {
             ...c,
             addition_value: newValue,

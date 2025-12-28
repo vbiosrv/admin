@@ -131,7 +131,6 @@ function Spool() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
           <h2 className="text-xl font-bold">Текущие задачи</h2>
-          <Help content="<b>Текущие задачи</b>: список текущих задач биллинга. Можно перейти к пользователю или услуге." />
         </div>
         <button
           onClick={handleCreate}

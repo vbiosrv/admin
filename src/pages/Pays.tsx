@@ -89,7 +89,6 @@ function Pays() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
           <h2 className="text-xl font-bold">Платежи</h2>
-          <Help content="<b>Платежи</b>: история платежей пользователей." />
         </div>
         <button
           onClick={() => setCreateModalOpen(true)}

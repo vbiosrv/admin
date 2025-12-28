@@ -29,19 +29,19 @@ function ConfigurationTabs() {
 
   // Cloud
   const [CloudAuth, setCloudAuth] = useState('');
-  
+
   // Основные настройки
   const [apiUrl, setApiUrl] = useState('');
   const [cliUrl, setCliUrl] = useState('');
   const [billingType, setBillingType] = useState<'Simpler' | 'Honest'>('Simpler');
   const [partnerIncomePercent, setPartnerIncomePercent] = useState(20);
   const [allowUserRegisterApi, setAllowUserRegisterApi] = useState(true);
-  
+
   // Брендинг (company)
   const [companyName, setCompanyName] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [primaryColor, setPrimaryColor] = useState('#22d3ee');
-  
+
   // Telegram боты
   const [telegramBots, setTelegramBots] = useState<Record<string, TelegramBot>>({});
   const [newBotName, setNewBotName] = useState('');
@@ -49,7 +49,7 @@ function ConfigurationTabs() {
   const [newBotSecret, setNewBotSecret] = useState('');
   const [newBotTemplate, setNewBotTemplate] = useState<string | null>('');
   const [showNewBotForm, setShowNewBotForm] = useState(false);
-  
+
   // Модальное окно редактирования бота
   const [editBotModalOpen, setEditBotModalOpen] = useState(false);
   const [editingBotName, setEditingBotName] = useState('');
@@ -147,7 +147,7 @@ function ConfigurationTabs() {
       const response = await shm_request('shm/v1/admin/config');
       const configData = response.data || [];
       setConfig(configData);
-      
+
       // Парсим данные для вкладок
       configData.forEach((item: ConfigItem) => {
         if (item.key === 'api') {
@@ -224,6 +224,11 @@ function ConfigurationTabs() {
   };
 
   const addNewBot = async () => {
+    if (!newBotTemplate) {
+      toast.error('Выберите шаблон');
+      return;
+    }
+
     if (!newBotName || !newBotToken) {
       toast.error('Заполните имя и токен бота');
       return;
@@ -241,7 +246,6 @@ function ConfigurationTabs() {
       [newBotName]: {
         token: newBotToken,
         secret: secret,
-        template_id: newBotTemplate || undefined,
         webhook_set: false,
       },
     };
@@ -260,7 +264,8 @@ function ConfigurationTabs() {
     setEditingBotName(botName);
     setEditBotToken(bot.token);
     setEditBotSecret(bot.secret || '');
-    setEditBotTemplate(bot.template_id || null);
+    // Используем название бота как template_id для отображения
+    setEditBotTemplate(botName);
     setEditBotModalOpen(true);
   };
 
@@ -275,7 +280,6 @@ function ConfigurationTabs() {
       [editingBotName]: {
         token: editBotToken,
         secret: editBotSecret || undefined,
-        template_id: editBotTemplate || undefined,
         webhook_set: telegramBots[editingBotName]?.webhook_set || false,
       },
     };
@@ -326,10 +330,10 @@ function ConfigurationTabs() {
           url: url,
           secret: bot.secret,
           token: bot.token,
-          template_id: bot.template_id || botName,
+          template_id: botName,
         }),
       });
-      
+
       if (response.ok && response.result) {
         // Обновляем webhook_set в конфиге
         const updatedBots = {
@@ -392,7 +396,7 @@ function ConfigurationTabs() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" 
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4"
                style={{ borderColor: 'var(--accent-primary)' }}></div>
           <p style={{ color: 'var(--theme-content-text-muted)' }}>Загрузка...</p>
         </div>
@@ -403,7 +407,7 @@ function ConfigurationTabs() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 
+        <h1
           className="text-2xl font-bold flex items-center gap-3"
           style={{ color: 'var(--theme-content-text)' }}
         >
@@ -442,7 +446,7 @@ function ConfigurationTabs() {
           <Link
             to="/payment-systems"
             className="px-4 py-2 border-b-2 transition-colors flex items-center gap-2 no-underline"
-            style={{ 
+            style={{
               borderColor: 'var(--theme-card-border)',
               color: 'var(--theme-content-text)'
             }}
@@ -468,6 +472,9 @@ function ConfigurationTabs() {
           <div className="rounded-lg border p-6" style={cardStyles}>
             <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--theme-content-text)' }}>
               API URL
+                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
+                  для приёма платежей и работы ботов
+                </label>
             </h3>
             <div className="flex gap-3">
               <input
@@ -495,7 +502,10 @@ function ConfigurationTabs() {
           {/* CLI URL */}
           <div className="rounded-lg border p-6" style={cardStyles}>
             <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--theme-content-text)' }}>
-              CLI URL
+              URL
+                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
+                  для личного кабинета
+                </label>
             </h3>
             <div className="flex gap-3">
               <input
@@ -547,10 +557,10 @@ function ConfigurationTabs() {
 в Январе 31 день, поэтому, стоимость услуги за день: 100р./31дней = 3.32 руб/день,
 в Феврале 28 дней, поэтому, стоимость услуги за день: 100р./28дней = 3.57 руб/день,
 Если клиент заказал услугу на месяц 1-ого Января, то дата окончания услуги будет 31-ого Января, тут всё ожидаемо.
-Но если клиент заказал услугу на месяц 10 января, то дата окончания услуги будет 9 февраля (а не 10, как ожидалось). 
-Это связано с тем, что стоимость услуги в январе меньше, чем в феврале (из-за разного кол-ва дней в месяцах). 
-Однако, особо внимательным клиентам кажется, что у них украли день. 
-Но бывают и обратные случаи, когда мы “дарим” дни: например, если клиент закажет услугу 27 февраля, то дата окончания будет 29 марта. 
+Но если клиент заказал услугу на месяц 10 января, то дата окончания услуги будет 9 февраля (а не 10, как ожидалось).
+Это связано с тем, что стоимость услуги в январе меньше, чем в феврале (из-за разного кол-ва дней в месяцах).
+Однако, особо внимательным клиентам кажется, что у них украли день.
+Но бывают и обратные случаи, когда мы “дарим” дни: например, если клиент закажет услугу 27 февраля, то дата окончания будет 29 марта.
 Клиентам приходится объяснять, что “крадут/дарят” дни не мы, а календарь.
 Дата окончания услуг плавающая из-за разного кол-ва дней в месяцах.
 " />
@@ -683,9 +693,9 @@ https://t.me/Name_bot?start=USER_ID
           {/* Список ботов - плиткой 3 в ряд */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {Object.entries(telegramBots).map(([botName, bot]) => (
-              <div 
-                key={botName} 
-                className="rounded-lg border p-4 cursor-pointer hover:opacity-80 transition-opacity" 
+              <div
+                key={botName}
+                className="rounded-lg border p-4 cursor-pointer hover:opacity-80 transition-opacity"
                 style={cardStyles}
                 onClick={() => openEditBotModal(botName, bot)}
               >
@@ -695,13 +705,13 @@ https://t.me/Name_bot?start=USER_ID
                     <span className="truncate">{botName}</span>
                   </h3>
                 </div>
-                
+
                 <div className="space-y-2">
                   <div className="flex items-center justify-between py-2">
                     <span className="text-xs font-medium" style={{ color: 'var(--theme-content-text-muted)' }}>
                       Вебхук
                     </span>
-                    <span 
+                    <span
                       className="px-2 py-0.5 rounded text-xs font-medium"
                       style={{
                         backgroundColor: bot.webhook_set ? 'var(--accent-success)' : 'var(--accent-warning)',
@@ -737,15 +747,20 @@ https://t.me/Name_bot?start=USER_ID
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
-                    Название бота (только латиница)
+                    Название бота (Профиль - только латиница)
                   </label>
                   <input
                     type="text"
                     value={newBotName}
                     onChange={(e) => setNewBotName(e.target.value)}
-                    placeholder="my_bot"
+                    placeholder="Выберите шаблон"
                     className="w-full px-3 py-2 rounded border"
-                    style={inputStyles}
+                    style={{
+                      ...inputStyles,
+                      opacity: 0.6,
+                      cursor: 'not-allowed',
+                    }}
+                    disabled
                   />
                 </div>
                 <div>
@@ -788,12 +803,18 @@ https://t.me/Name_bot?start=USER_ID
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
-                    Шаблон 
+                    Шаблон <span style={{ color: 'var(--accent-warning)' }}>*</span>
                   </label>
                     <TemplateSelect
                     value={newBotTemplate}
-                    onChange={(id) => setNewBotTemplate(id)}
+                    onChange={(id) => {
+                      setNewBotTemplate(id);
+                      if (id) {
+                        setNewBotName(id);
+                      }
+                    }}
                     className="flex-1"
+                    placeholder="Выберите шаблон"
                     />
                 </div>
                 <div className="flex gap-3">
@@ -883,11 +904,11 @@ https://t.me/Name_bot?start=USER_ID
 
       {/* Модальное окно редактирования бота */}
       {editBotModalOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
           onClick={() => setEditBotModalOpen(false)}
         >
-          <div 
+          <div
             className="rounded-lg border p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
             style={cardStyles}
             onClick={(e) => e.stopPropagation()}
@@ -971,7 +992,7 @@ https://t.me/Name_bot?start=USER_ID
                   <label className="block text-sm font-medium" style={{ color: 'var(--theme-content-text)' }}>
                     Статус вебхука
                   </label>
-                  <span 
+                  <span
                     className="px-2 py-0.5 rounded text-xs font-medium"
                     style={{
                       backgroundColor: telegramBots[editingBotName]?.webhook_set ? 'var(--accent-success)' : 'var(--accent-warning)',
@@ -1033,11 +1054,11 @@ https://t.me/Name_bot?start=USER_ID
 
       {/* Модальное окно установки вебхука */}
       {webhookModalOpen && webhookBotData && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
           onClick={() => setWebhookModalOpen(false)}
         >
-          <div 
+          <div
             className="rounded-lg border p-6 max-w-2xl w-full mx-4"
             style={cardStyles}
             onClick={(e) => e.stopPropagation()}

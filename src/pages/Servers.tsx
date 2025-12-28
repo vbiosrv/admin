@@ -131,7 +131,6 @@ function Servers() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
           <h2 className="text-xl font-bold">Сервера</h2>
-          <Help content="<b>Сервера</b>: список серверов, на которых размещаются услуги." />
         </div>
         <button
           onClick={() => setCreateModalOpen(true)}

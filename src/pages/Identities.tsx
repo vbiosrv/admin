@@ -113,7 +113,6 @@ function Identities() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
           <h2 className="text-xl font-bold">Ключи</h2>
-          <Help content="<b>Ключи</b>: SSH ключи и другие учетные данные для подключения к серверам." />
         </div>
         <button
           onClick={handleCreate}

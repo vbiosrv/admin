@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import DataTable, { SortDirection } from '../components/DataTable';
+import DataTableTree, { SortDirection } from '../components/DataTableTree';
 import { UserServiceModal, UserServiceCreateModal } from '../modals';
 import Help from '../components/Help';
 import { shm_request, normalizeListResponse } from '../lib/shm_request';
@@ -171,12 +171,24 @@ function UserServices() {
     fetchData(limit, offset, filters, sortField, sortDirection);
   };
 
+  const handleLoadChildren = async (parentRow: any): Promise<any[]> => {
+    try {
+      const parentId = parentRow.user_service_id;
+      const url = `shm/v1/admin/user/service?limit=1000&offset=0&parent=${parentId}`;
+      const res = await shm_request(url);
+      const { data: items } = normalizeListResponse(res);
+      return items;
+    } catch (error) {
+      console.error('Error loading children:', error);
+      return [];
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
           <h2 className="text-xl font-bold">Услуги пользователей</h2>
-          <Help content="<b>Услуги пользователей</b>: список всех услуг, привязанных к пользователям." />
         </div>
         <button
           onClick={handleCreate}
@@ -191,23 +203,27 @@ function UserServices() {
         </button>
       </div>
       <div style={{ flex: 1, overflow: 'hidden' }}>
-        <DataTable
+        <DataTableTree
           columns={userServiceColumns}
-        data={data}
-        loading={loading}
-        total={total}
-        limit={limit}
-        offset={offset}
-        onPageChange={handlePageChange}
-        onSort={handleSort}
-        onFilterChange={handleFilterChange}
-        sortField={sortField}
-        sortDirection={sortDirection}
-        onRowClick={handleRowClick}
-        onRefresh={handleRefresh}
-        storageKey="user-services"
-        externalFilters={externalFilters}
-      />
+          data={data}
+          loading={loading}
+          total={total}
+          limit={limit}
+          offset={offset}
+          onPageChange={handlePageChange}
+          onSort={handleSort}
+          onFilterChange={handleFilterChange}
+          sortField={sortField}
+          sortDirection={sortDirection}
+          onRowClick={handleRowClick}
+          onRefresh={handleRefresh}
+          onLoadChildren={handleLoadChildren}
+          storageKey="user-services"
+          externalFilters={externalFilters}
+          parentKeyId="parent"
+          itemKeyId="user_service_id"
+          maxDeepLevel={5}
+        />
       </div>
 
       {}

@@ -79,7 +79,6 @@ function Promo() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
           <h2 className="text-xl font-bold">Промокоды</h2>
-          <Help content="<b>Промокоды</b>: список промокодов. Можно создавать, удалять, смотреть кто использовал." />
         </div>
         <button
           onClick={() => setCreateModalOpen(true)}

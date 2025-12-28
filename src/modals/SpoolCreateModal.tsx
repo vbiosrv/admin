@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { shm_request } from '../lib/shm_request';
 import UserSelect from '../components/UserSelect';
 import TemplateSelect from '../components/TemplateSelect';
+import ServerGroupSelect from '../components/ServerGroupSelect';
 import { useSelectedUserStore } from '../store/selectedUserStore';
 
 interface SpoolCreateModalProps {
@@ -247,19 +248,12 @@ export default function SpoolCreateModal({
           <label className="w-32 text-sm font-medium shrink-0" style={labelStyles}>
             Группа серверов <span className="text-red-500">*</span>
           </label>
-          <select
+          <ServerGroupSelect
             value={formData.server_gid || ''}
-            onChange={(e) => handleChange('server_gid', e.target.value)}
+            onChange={(e) => handleChange('server_gid', e)}
             className="flex-1 px-3 py-2 text-sm rounded border"
-            style={inputStyles}
-          >
-            <option value="">-- Выберите группу --</option>
-            {serverGroups.map((group) => (
-              <option key={group.group_id} value={group.group_id}>
-                {group.name || `Группа #${group.group_id}`}
-              </option>
-            ))}
-          </select>
+            showAddButton={true}
+            />
         </div>
 
         {}

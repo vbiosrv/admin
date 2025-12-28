@@ -94,7 +94,6 @@ function Withdraws() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
           <h2 className="text-xl font-bold">Списания</h2>
-          <Help content="<b>Списания</b>: история списаний средств с баланса пользователей." />
         </div>
       </div>
       <div style={{ flex: 1, overflow: 'hidden' }}>

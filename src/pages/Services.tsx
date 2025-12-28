@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import DataTable, { SortDirection } from '../components/DataTable';
+import DataTableTree, { SortDirection } from '../components/DataTableTree';
 import ServiceModal from '../modals/ServiceModal';
 import ServiceCreateModal from '../modals/ServiceCreateModal';
 import Help from '../components/Help';
@@ -124,12 +124,24 @@ function Services() {
     setCreateModalOpen(true);
   };
 
+  const handleLoadChildren = async (parentRow: any): Promise<any[]> => {
+    try {
+      const parentId = parentRow.service_id;
+      const url = `shm/v1/admin/service?limit=1000&offset=0&parent=${parentId}`;
+      const res = await shm_request(url);
+      const { data: items } = normalizeListResponse(res);
+      return items;
+    } catch (error) {
+      console.error('Error loading children:', error);
+      return [];
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
           <h2 className="text-xl font-bold">Услуги</h2>
-          <Help content="<b>Услуги</b>: список тарифов и услуг биллинга. Можно редактировать стоимость, период, настройки." />
         </div>
         <button
           onClick={handleCreate}
@@ -144,22 +156,28 @@ function Services() {
           Добавить
         </button>
       </div>
-      <DataTable
-        columns={serviceColumns}
-        data={data}
-        loading={loading}
-        total={total}
-        limit={limit}
-        offset={offset}
-        onPageChange={handlePageChange}
-        onSort={handleSort}
-        onFilterChange={handleFilterChange}
-        sortField={sortField}
-        sortDirection={sortDirection}
-        onRowClick={handleRowClick}
-        onRefresh={() => fetchData(limit, offset, filters, sortField, sortDirection)}
-        storageKey="services"
-      />
+      <div style={{ flex: 1, overflow: 'hidden' }}>
+        <DataTableTree
+          columns={serviceColumns}
+          data={data}
+          loading={loading}
+          total={total}
+          limit={limit}
+          offset={offset}
+          onPageChange={handlePageChange}
+          onSort={handleSort}
+          onFilterChange={handleFilterChange}
+          sortField={sortField}
+          sortDirection={sortDirection}
+          onRowClick={handleRowClick}
+          onRefresh={() => fetchData(limit, offset, filters, sortField, sortDirection)}
+          onLoadChildren={handleLoadChildren}
+          storageKey="services"
+          parentKeyId="parent"
+          itemKeyId="service_id"
+          maxDeepLevel={5}
+        />
+      </div>
       <ServiceModal
         open={viewModalOpen}
         onClose={() => setViewModalOpen(false)}

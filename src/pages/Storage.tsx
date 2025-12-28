@@ -85,7 +85,6 @@ function Storage() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold">Хранилище</h2>
-        <Help content="<b>Хранилище</b>: данные пользователей, сохраненные в key-value формате." />
       </div>
       <div style={{ flex: 1, overflow: 'hidden' }}>
         <DataTable

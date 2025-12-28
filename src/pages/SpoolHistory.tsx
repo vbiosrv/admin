@@ -118,7 +118,6 @@ function SpoolHistory() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div className="flex items-center mb-4">
         <h2 className="text-xl font-bold">Список завершенных задач</h2>
-        <Help content="<b>Список завершенных задач</b>: история выполненных задач биллинга." />
       </div>
       <DataTable
         columns={spoolHistoryColumns}

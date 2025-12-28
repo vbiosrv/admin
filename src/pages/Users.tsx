@@ -169,7 +169,6 @@ function Users() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
           <h2 className="text-xl font-bold">Пользователи</h2>
-          <Help content="<b>Пользователи</b>: здесь отображается список пользователей. Можно фильтровать, скрывать/показывать столбцы, смотреть подробности." />
         </div>
         <button
           onClick={handleCreate}

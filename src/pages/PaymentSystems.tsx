@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { CreditCard, ArrowLeft } from 'lucide-react';
 import { shm_request } from '../lib/shm_request';
 import toast from 'react-hot-toast';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { UniversalPaymentModal, PaymentSystem } from '../modals/PaymentSystems/UniversalPaymentModal';
 
 function PaymentSystems() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [paymentSystems, setPaymentSystems] = useState<PaymentSystem[]>([]);
   const [selectedSystem, setSelectedSystem] = useState<PaymentSystem | null>(null);
@@ -66,8 +67,8 @@ function PaymentSystems() {
           <CreditCard className="w-7 h-7" style={{ color: 'var(--theme-primary-color)' }} />
           Платежные системы
         </h1>
-        <Link
-          to="/cloud"
+        <button
+          onClick={() => navigate(-1)}
           className="px-4 py-2 rounded flex items-center gap-2"
           style={{
             backgroundColor: 'var(--theme-button-secondary-bg)',
@@ -77,7 +78,7 @@ function PaymentSystems() {
         >
           <ArrowLeft className="w-4 h-4" />
           Назад
-        </Link>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

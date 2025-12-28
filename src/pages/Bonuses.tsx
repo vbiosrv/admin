@@ -88,7 +88,6 @@ function Bonuses() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
           <h2 className="text-xl font-bold">Бонусы</h2>
-          <Help content="<b>Бонусы</b>: история начисления бонусов пользователям." />
         </div>
         <button
           onClick={() => setCreateModalOpen(true)}

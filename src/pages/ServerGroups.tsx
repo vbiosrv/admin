@@ -122,7 +122,6 @@ function ServerGroups() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
           <h2 className="text-xl font-bold">Группы серверов</h2>
-          <Help content="<b>Группы серверов</b>: логические группы серверов для распределения услуг." />
         </div>
         <button
           onClick={handleCreate}
