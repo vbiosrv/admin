@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { HelpCircle, X } from 'lucide-react';
-import { useSettingsStore } from '../store/settingsStore';
 
 interface HelpProps {
   content: string;
@@ -8,7 +7,6 @@ interface HelpProps {
 
 function Help({ content }: HelpProps) {
   const [open, setOpen] = useState(false);
-  const { showHelp } = useSettingsStore();
 
   const handleClose = () => {
     setOpen(false);
@@ -22,8 +20,6 @@ function Help({ content }: HelpProps) {
   const handlePanelClick = (e: React.MouseEvent) => {
     e.stopPropagation();
   };
-
-  if (!showHelp) return null;
 
   return (
     <>

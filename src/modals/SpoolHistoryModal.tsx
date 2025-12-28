@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Modal from '../components/Modal';
 import Console from '../components/Console';
 import JsonEditor from '../components/JsonEditor';
+import UserSelect from '../components/UserSelect';
 import { X, Terminal } from 'lucide-react';
 
 interface SpoolHistoryModalProps {
@@ -126,13 +127,12 @@ export default function SpoolHistoryModal({
           <label className="w-32 text-sm font-medium shrink-0" style={labelStyles}>
             Пользователь
           </label>
-          <input
-            type="text"
-            value={data?.user_id || ''}
-            disabled
-            className="flex-1 px-3 py-2 text-sm rounded border disabled:opacity-50"
-            style={inputStyles}
-          />
+          <div className="flex-1">
+            <UserSelect
+              value={data?.user_id || ''}
+              readonly
+            />
+          </div>
         </div>
 
         {}
@@ -175,6 +175,20 @@ export default function SpoolHistoryModal({
           />
         </div>
 
+        {data?.delayed && (
+          <div className="flex items-center gap-3">
+            <label className="w-32 text-sm font-medium shrink-0" style={labelStyles}>
+              Отложена
+            </label>
+            <input
+              type="text"
+              value={data.delayed || ''}
+              disabled
+              className="flex-1 px-3 py-2 text-sm rounded border disabled:opacity-50"
+              style={inputStyles}
+            />
+          </div>
+        )}
         {}
         {data?.response?.pipeline_id && (
           <div className="flex items-center gap-3">

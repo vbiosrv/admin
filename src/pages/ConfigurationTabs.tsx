@@ -40,7 +40,6 @@ function ConfigurationTabs() {
   // Брендинг (company)
   const [companyName, setCompanyName] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
-  const [primaryColor, setPrimaryColor] = useState('#22d3ee');
 
   // Telegram боты
   const [telegramBots, setTelegramBots] = useState<Record<string, TelegramBot>>({});
@@ -161,7 +160,6 @@ function ConfigurationTabs() {
         } else if (item.key === 'company') {
           setCompanyName(item.value?.name || '');
           setLogoUrl(item.value?.logoUrl || '');
-          setPrimaryColor(item.value?.primaryColor || '#22d3ee');
         } else if (item.key === 'telegram') {
           // Отделяем xtr_exchange_rate от ботов
           const { xtr_exchange_rate, ...bots } = item.value || {};
@@ -210,7 +208,6 @@ function ConfigurationTabs() {
     saveConfigItem('company', {
       name: companyName,
       logoUrl: logoUrl,
-      primaryColor: primaryColor,
     });
   };
 

@@ -101,11 +101,6 @@ const navigation: MenuItem[] = [
     ]
   },
   {
-    name: 'Настройки системы',
-    href: '/settings',
-    icon: Wrench
-  },
-  {
     name: 'SHM Cloud',
     href: '/cloud',
     icon: Cloud

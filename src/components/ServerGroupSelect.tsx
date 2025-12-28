@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { shm_request } from '../lib/shm_request';
 import { Plus } from 'lucide-react';
+import ServerGroupCreateModal from '../modals/ServerGroupCreateModal';
+import toast from 'react-hot-toast';
 
 interface ServerGroup {
   group_id: number;
@@ -31,6 +33,7 @@ export default function ServerGroupSelect({
   const [groups, setGroups] = useState<ServerGroup[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingGroup, setLoadingGroup] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const lastLoadedIdRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -96,6 +99,42 @@ export default function ServerGroupSelect({
     onChange?.(groupId, group);
   };
 
+  const handleCreateGroup = async (data: Record<string, any>) => {
+    try {
+      const response = await shm_request('shm/v1/admin/server/group', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+
+      toast.success('Группа серверов создана');
+
+      // Обновляем список групп
+      const res = await shm_request('shm/v1/admin/server/group');
+      const serverGroupsData = res.data || res;
+      const serverGroups = Array.isArray(serverGroupsData) ? serverGroupsData : [];
+
+      const autoGroup: ServerGroup = {
+        group_id: 0,
+        name: '<AUTO> - на том же сервере, на котором услуга была создана',
+        server_gid: 0,
+      };
+
+      setGroups([autoGroup, ...serverGroups]);
+
+      // Получаем ID созданной группы и устанавливаем её как выбранную
+      const createdGroupId = response.data?.group_id || response.group_id;
+      if (createdGroupId) {
+        const createdGroup = serverGroups.find(g => g.group_id === createdGroupId);
+        onChange?.(createdGroupId, createdGroup || null);
+      }
+
+      setShowCreateModal(false);
+    } catch (error: any) {
+      toast.error(error.data?.error || 'Ошибка создания группы');
+      throw error;
+    }
+  };
+
   const inputStyles = {
     backgroundColor: 'var(--theme-input-bg)',
     borderColor: 'var(--theme-input-border)',
@@ -138,6 +177,7 @@ export default function ServerGroupSelect({
         )}
         <button
           type="button"
+          onClick={() => setShowCreateModal(true)}
           className="p-2 rounded hover:bg-opacity-80 transition-colors"
           style={{
             backgroundColor: 'var(--theme-button-secondary-bg)',
@@ -148,6 +188,11 @@ export default function ServerGroupSelect({
         >
           <Plus className="w-4 h-4" />
         </button>
+        <ServerGroupCreateModal
+          open={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSave={handleCreateGroup}
+        />
       </div>
     );
   }

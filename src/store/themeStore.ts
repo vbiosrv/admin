@@ -139,12 +139,9 @@ interface ThemeState {
   mode: ThemeMode;
   resolvedTheme: 'light' | 'dark';
   colors: ThemeColors;
-  customColors: Partial<ThemeColors>;
 
   setMode: (mode: ThemeMode) => void;
   setCustomColor: (key: keyof ThemeColors, value: string) => void;
-  setCustomColors: (colors: Partial<ThemeColors>) => void;
-  resetCustomColors: () => void;
   getEffectiveColors: () => ThemeColors;
   applyTheme: () => void;
 }
@@ -169,52 +166,25 @@ export const useThemeStore = create<ThemeState>()(
       mode: 'system',
       resolvedTheme: getSystemTheme(),
       colors: getSystemTheme() === 'dark' ? darkTheme : lightTheme,
-      customColors: {},
 
       setMode: (mode) => {
         const resolvedTheme = resolveTheme(mode);
         const baseColors = resolvedTheme === 'dark' ? darkTheme : lightTheme;
-        const customColors = get().customColors;
 
         set({
           mode,
           resolvedTheme,
-          colors: { ...baseColors, ...customColors }
+          colors: { ...baseColors }
         });
         get().applyTheme();
       },
 
       setCustomColor: (key, value) => {
-        const customColors = { ...get().customColors, [key]: value };
         const resolvedTheme = get().resolvedTheme;
         const baseColors = resolvedTheme === 'dark' ? darkTheme : lightTheme;
 
         set({
-          customColors,
-          colors: { ...baseColors, ...customColors }
-        });
-        get().applyTheme();
-      },
-
-      setCustomColors: (colors) => {
-        const customColors = { ...get().customColors, ...colors };
-        const resolvedTheme = get().resolvedTheme;
-        const baseColors = resolvedTheme === 'dark' ? darkTheme : lightTheme;
-
-        set({
-          customColors,
-          colors: { ...baseColors, ...customColors }
-        });
-        get().applyTheme();
-      },
-
-      resetCustomColors: () => {
-        const resolvedTheme = get().resolvedTheme;
-        const baseColors = resolvedTheme === 'dark' ? darkTheme : lightTheme;
-
-        set({
-          customColors: {},
-          colors: baseColors
+          colors: { ...baseColors }
         });
         get().applyTheme();
       },
@@ -240,14 +210,13 @@ export const useThemeStore = create<ThemeState>()(
       name: 'shm-theme',
       partialize: (state) => ({
         mode: state.mode,
-        customColors: state.customColors
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
           const resolvedTheme = resolveTheme(state.mode);
           const baseColors = resolvedTheme === 'dark' ? darkTheme : lightTheme;
           state.resolvedTheme = resolvedTheme;
-          state.colors = { ...baseColors, ...state.customColors };
+          state.colors = { ...baseColors };
 
           setTimeout(() => state.applyTheme(), 0);
         }

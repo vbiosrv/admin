@@ -69,7 +69,7 @@ function CurrencyConverter() {
 
     try {
       const url = forceUpdate
-        ? 'shm/v1/admin/cloud/currencies?update=1'
+        ? 'shm/v1/admin/cloud/currencies?no_cache=1'
         : 'shm/v1/admin/cloud/currencies';
 
       const response = await shm_request(url) as CurrenciesResponse;

@@ -4,7 +4,6 @@ export interface DashboardAnalytics {
   counts: {
     totalUsers: number;
     activeUserServices: number;
-    totalServers: number;
   };
   payments: {
     timeline: { date: string; value: number; label?: string }[];
@@ -35,7 +34,6 @@ export async function fetchDashboardAnalytics(period: number = 7): Promise<Dashb
       shm_request('shm/v1/admin/user?limit=1'),
       shm_request(`shm/v1/admin/user?start=${start}&stop=${stop}&field=created&limit=9999`),
       shm_request(`shm/v1/admin/user/service?start=${start}&stop=${stop}&field=created&limit=5000`),
-      shm_request('shm/v1/admin/server?limit=1'),
       shm_request(`shm/v1/admin/user/pay?start=${start}&stop=${stop}&field=date&limit=9999`),
       shm_request(`shm/v1/admin/user/service/withdraw?start=${start}&stop=${stop}&field=create_date&limit=9999`),
     ]);
@@ -44,7 +42,6 @@ export async function fetchDashboardAnalytics(period: number = 7): Promise<Dashb
       usersCountRes,
       usersNewRes,
       userServicesNewRes,
-      serversCountRes,
       paymentsRes,
       withdrawsRes,
     ] = results.map((result) => (result.status === 'fulfilled' ? result.value : null));
@@ -53,7 +50,6 @@ export async function fetchDashboardAnalytics(period: number = 7): Promise<Dashb
     const totalUsersCount = usersCountRes?.items || usersCountRes?.total || 0;
     const usersNew = usersNewRes ? normalizeListResponse(usersNewRes).data : [];
     const userServicesNew = userServicesNewRes ? normalizeListResponse(userServicesNewRes).data : [];
-    const totalServersCount = serversCountRes?.items || serversCountRes?.total || 0;
     const payments = paymentsRes ? normalizeListResponse(paymentsRes).data : [];
     const withdraws = withdrawsRes ? normalizeListResponse(withdrawsRes).data : [];
 
@@ -68,7 +64,7 @@ export async function fetchDashboardAnalytics(period: number = 7): Promise<Dashb
     // Подсчеты
     const totalRevenue = realPayments.reduce((sum: number, p: any) => sum + parseFloat(p.money || 0), 0);
     const totalWithdraws = withdraws.reduce((sum: number, w: any) => sum + parseFloat(w.cost || 0), 0);
-    const activeUserServices = userServicesNew.filter((us: any) => us.status === 'ACTIVE' || us.status === 'active').length;
+    const activeUserServices = userServicesNew.filter((us: any) => us.status === 'ACTIVE').length;
 
     // Группировка платежей по датам
     const paymentsByDate: Record<string, number> = {};
@@ -87,7 +83,6 @@ export async function fetchDashboardAnalytics(period: number = 7): Promise<Dashb
       counts: {
         totalUsers: totalUsersCount,
         activeUserServices: activeUserServices,
-        totalServers: totalServersCount,
       },
       payments: {
         timeline: Object.entries(paymentsByDate).map(([date, value]) => ({ date, value })),

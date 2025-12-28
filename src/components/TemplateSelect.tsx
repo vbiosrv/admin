@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { FileText, Edit, Search, List } from 'lucide-react';
+import { FileText, Edit, Search, List, Plus } from 'lucide-react';
 import { shm_request } from '../lib/shm_request';
 import TemplateModal from '../modals/TemplateModal';
+import TemplateCreateModal from '../modals/TemplateCreateModal';
+import toast from 'react-hot-toast';
 
 interface Template {
   id: string;
@@ -37,6 +39,7 @@ export default function TemplateSelect({
   const [loading, setLoading] = useState(false);
   const [loadingTemplate, setLoadingTemplate] = useState(false);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'search' | 'list'>('list');
   const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number; width: number } | null>(null);
 
@@ -264,6 +267,42 @@ export default function TemplateSelect({
     }
   };
 
+  const handleCreate = async (templateData: Record<string, any>) => {
+    try {
+      await shm_request('shm/v1/admin/template', {
+        method: 'PUT',
+        body: JSON.stringify(templateData),
+      });
+
+      toast.success('Шаблон создан');
+
+      // Обновляем список шаблонов если в режиме списка
+      if (viewMode === 'list') {
+        const res = await shm_request('shm/v1/admin/template?limit=0');
+        const data = res.data || res;
+        const templates = Array.isArray(data) ? data : [];
+        setAllTemplates(templates);
+        setItems(templates);
+      }
+
+      // Устанавливаем созданный шаблон как выбранный
+      const newTemplate: Template = {
+        id: templateData.id,
+        settings: templateData.settings,
+        data: templateData.data,
+      };
+      setSelectedTemplate(newTemplate);
+      setSearch(formatTemplate(newTemplate));
+      onChange?.(templateData.id, newTemplate);
+
+      setCreateModalOpen(false);
+      onTemplateUpdated?.();
+    } catch (error: any) {
+      toast.error(error.data?.error || 'Ошибка создания шаблона');
+      throw error;
+    }
+  };
+
   const inputStyles = {
     backgroundColor: 'var(--theme-input-bg)',
     borderColor: 'var(--theme-input-border)',
@@ -320,7 +359,6 @@ export default function TemplateSelect({
   return (
     <div ref={containerRef} className={`w-full ${className}`}>
       <div className="flex items-center gap-2">
-        {}
         <button
           onClick={() => {
             const newMode = viewMode === 'search' ? 'list' : 'search';
@@ -348,7 +386,6 @@ export default function TemplateSelect({
           )}
         </button>
 
-        {}
         <div className="relative flex-1">
           <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
             <FileText className="w-4 h-4" style={{ color: 'var(--theme-content-text-muted)' }} />
@@ -389,7 +426,6 @@ export default function TemplateSelect({
             </div>
           )}
 
-          {}
           {dropdownVisible && items.length > 0 && dropdownPosition && (
             <div
               className="fixed z-[9999] rounded shadow-lg max-h-60 overflow-y-auto"
@@ -422,7 +458,6 @@ export default function TemplateSelect({
           )}
         </div>
 
-        {}
         {selectedTemplate && (
           <button
             onClick={handleEdit}
@@ -437,14 +472,30 @@ export default function TemplateSelect({
             <Edit className="w-4 h-4" />
           </button>
         )}
+        <button
+          onClick={() => setCreateModalOpen(true)}
+          className="p-2 rounded transition-colors"
+          style={{
+            backgroundColor: 'var(--theme-button-secondary-bg)',
+            color: 'var(--theme-button-secondary-text)',
+            border: '1px solid var(--theme-button-secondary-border)',
+          }}
+          title="Создать новый шаблон"
+        >
+          <Plus className="w-4 h-4" />
+        </button>
       </div>
 
-      {}
       <TemplateModal
         open={templateModalOpen}
         onClose={() => setTemplateModalOpen(false)}
         data={selectedTemplate}
         onSave={handleSave}
+      />
+      <TemplateCreateModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onSave={handleCreate}
       />
     </div>
   );

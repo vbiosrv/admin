@@ -22,7 +22,6 @@ import Events from './pages/Events';
 import ServerGroups from './pages/ServerGroups';
 import Identities from './pages/Identities';
 import SpoolHistory from './pages/SpoolHistory';
-import UnifiedSettings from './pages/UnifiedSettings';
 import SHMCloud from './pages/SHMCloud';
 import Subscription from './pages/Subscription';
 import PaymentSystems from './pages/PaymentSystems';
@@ -112,7 +111,6 @@ function App() {
           <Route path="spool" element={<Spool />} />
           <Route path="spool-history" element={<SpoolHistory />} />
           <Route path="templates" element={<Templates />} />
-          <Route path="settings" element={<UnifiedSettings />} />
           <Route path="cloud" element={<SHMCloud />} />
           <Route path="subscription" element={<Subscription />} />
           <Route path="payment-systems" element={<PaymentSystems />} />

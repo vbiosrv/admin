@@ -112,7 +112,7 @@ function Dashboard() {
       </div>
 
       {/* Основные метрики */}
-      <StatCardGrid columns={3}>
+      <StatCardGrid columns={2}>
         <StatCard
           title="Пользователи"
           value={analytics?.counts.totalUsers ?? '...'}
@@ -128,14 +128,6 @@ function Dashboard() {
           color="emerald"
           loading={loading}
           onClick={() => window.location.href = '/user-services'}
-        />
-        <StatCard
-          title="Серверы"
-          value={analytics?.counts.totalServers ?? '...'}
-          icon={Server}
-          color="violet"
-          loading={loading}
-          onClick={() => window.location.href = '/servers'}
         />
       </StatCardGrid>
 
@@ -219,14 +211,12 @@ function Dashboard() {
 
       {}
       <div className="mt-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-3">
           {[
             { to: '/users', icon: Users, label: 'Пользователи', color: 'cyan' },
             { to: '/user-services', icon: Package, label: 'Услуги', color: 'emerald' },
             { to: '/pays', icon: CreditCard, label: 'Платежи', color: 'violet' },
-            { to: '/servers', icon: Server, label: 'Серверы', color: 'amber' },
             { to: '/spool', icon: Activity, label: 'Задачи', color: 'rose' },
-            { to: '/analytics', icon: TrendingUp, label: 'Аналитика', color: 'blue' },
           ].map(({ to, icon: Icon, label, color }) => (
             <Link
               key={to}

@@ -110,7 +110,7 @@ export default function JsonEditor({
     if (data === null || data === undefined) return '';
     try {
       const str = JSON.stringify(data);
-      return str.length > 50 ? str.slice(0, 50) + '...' : str;
+      return str.length > 150 ? str.slice(0, 150) + '...' : str;
     } catch {
       return '[Object]';
     }

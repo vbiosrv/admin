@@ -4,7 +4,6 @@ import { shm_request, normalizeListResponse } from '../lib/shm_request';
 export interface BrandingSettings {
   name: string;
   logoUrl: string;
-  primaryColor: string;
 }
 
 interface BrandingState {
@@ -20,7 +19,6 @@ interface BrandingState {
 const DEFAULT_BRANDING: BrandingSettings = {
   name: 'SHM Admin',
   logoUrl: '',
-  primaryColor: '#22d3ee',
 };
 
 export const useBrandingStore = create<BrandingState>((set, get) => ({
@@ -40,7 +38,6 @@ export const useBrandingStore = create<BrandingState>((set, get) => ({
         const branding = {
           name: company.name || DEFAULT_BRANDING.name,
           logoUrl: company.logoUrl || DEFAULT_BRANDING.logoUrl,
-          primaryColor: company.primaryColor || DEFAULT_BRANDING.primaryColor,
         };
         set({ branding, loaded: true });
         document.title = branding.name;
@@ -71,7 +68,6 @@ export const useBrandingStore = create<BrandingState>((set, get) => ({
       const configData = {
         name: newBranding.name,
         logoUrl: newBranding.logoUrl,
-        primaryColor: newBranding.primaryColor,
       };
 
       const result = await shm_request('shm/v1/admin/config', {
@@ -102,7 +98,6 @@ export const useBrandingStore = create<BrandingState>((set, get) => ({
       const defaultConfig = {
         name: DEFAULT_BRANDING.name,
         logoUrl: DEFAULT_BRANDING.logoUrl,
-        primaryColor: DEFAULT_BRANDING.primaryColor,
       };
 
       const result = await shm_request('shm/v1/admin/config', {
