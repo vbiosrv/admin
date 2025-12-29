@@ -141,7 +141,7 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({ op
             </p>
           )}
 
-          {system.price && system.price > 0 ? (
+          { !system.paid && system.price && system.price > 0 ? (
             <div className="p-3 rounded mb-4" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }}>
               <p className="text-sm font-semibold" style={{ color: 'var(--accent-primary)' }}>
                 Стоимость подключения: {system.price} ₽
@@ -154,8 +154,8 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({ op
               <div className="animate-spin rounded-full h-12 w-12 border-b-2"
                    style={{ borderColor: 'var(--accent-primary)' }}></div>
             </div>
-          ) : !system.paid ? (
-            // Показываем кнопку "Купить" если платежная система не куплена
+          ) : !system.paid && system.price !== 0 ? (
+            // Показываем кнопку "Купить" если платежная система не куплена и не бесплатная
             <div className="text-center">
               <p className="mb-6" style={{ color: 'var(--theme-content-text-muted)' }}>
                 Для настройки платежной системы необходимо сначала её приобрести

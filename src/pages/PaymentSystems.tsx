@@ -81,7 +81,7 @@ function PaymentSystems() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         {paymentSystems.map((system) => (
           <div
             key={system.name}
@@ -104,6 +104,12 @@ function PaymentSystems() {
               <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--theme-card-border)' }}>
                 <p className="text-sm font-semibold" style={{ color: 'var(--accent-success)' }}>
                   Куплена
+                </p>
+              </div>
+            ) : system.price === 0 ? (
+              <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--theme-card-border)' }}>
+                <p className="text-sm font-semibold" style={{ color: 'var(--accent-success)' }}>
+                  Бесплатно
                 </p>
               </div>
             ) : system.price && system.price > 0 ? (

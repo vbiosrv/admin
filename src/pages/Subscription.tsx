@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CreditCard, Calendar, CheckCircle, XCircle, ExternalLink, ArrowLeft } from 'lucide-react';
 import { shm_request } from '../lib/shm_request';
@@ -34,6 +34,7 @@ function Subscription() {
   const [showSubscriptionForm, setShowSubscriptionForm] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<number | null>(null);
   const [orderingSubscription, setOrderingSubscription] = useState(false);
+  const pollingIntervalRef = useRef<number | null>(null);
 
   const cardStyles = {
     backgroundColor: 'var(--theme-card-bg)',
@@ -50,10 +51,42 @@ function Subscription() {
   useEffect(() => {
     loadSubscriptionInfo();
     loadSubscriptionPlans();
+
+    // Очистка интервала при размонтировании компонента
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
   }, []);
 
-  const loadSubscriptionInfo = async () => {
-    setLoading(true);
+  // Эффект для автоматического обновления в зависимости от статуса
+  useEffect(() => {
+    // Очищаем предыдущий интервал
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+
+    if (subscriptionInfo && subscriptionInfo.status === 'PROGRESS') {
+      // Обновляем каждую секунду для статуса "В процессе"
+      pollingIntervalRef.current = setInterval(() => {
+        loadSubscriptionInfo(true); // Передаем флаг фонового обновления
+      }, 1000);
+    }
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, [subscriptionInfo?.status]);
+
+  const loadSubscriptionInfo = async (isBackgroundUpdate = false) => {
+    // Показываем загрузку только если это не фоновое обновление
+    if (!isBackgroundUpdate) {
+      setLoading(true);
+    }
 
     try {
       const response = await shm_request('shm/v1/admin/cloud/proxy/service/sub/get');
@@ -76,6 +109,11 @@ function Subscription() {
         const data = response.data || response;
         setSubscriptionInfo(data);
         setShowSubscriptionForm(false);
+
+        // Если статус стал ACTIVE, показываем уведомление только при фоновом обновлении
+        if (isBackgroundUpdate && data.status === 'ACTIVE' && subscriptionInfo?.status !== 'ACTIVE') {
+          toast.success('Подписка успешно активирована!');
+        }
       }
     } catch (error: any) {
       console.error('Subscription loading exception:', error);
@@ -98,7 +136,9 @@ function Subscription() {
         setSubscriptionError('Ошибка загрузки информации о подписке');
       }
     } finally {
-      setLoading(false);
+      if (!isBackgroundUpdate) {
+        setLoading(false);
+      }
     }
   };
 
@@ -132,6 +172,7 @@ function Subscription() {
           toast.error(errorMsg);
         } else {
           toast.success('Подписка успешно оформлена');
+          // Начинаем опрашивать статус
           await loadSubscriptionInfo();
         }
       }
@@ -162,6 +203,36 @@ function Subscription() {
     } catch (error) {
       toast.error('Ошибка обновления периода продления');
     }
+  };
+
+  // Функция для перевода статусов
+  const getStatusText = (status: string) => {
+    const statusMap: Record<string, string> = {
+      'ACTIVE': 'Активно',
+      'PROGRESS': 'В2 процессе',
+      'NOT PAID': 'Не оплачено',
+      'NOT_PAID': 'Не оплачено',
+    };
+    return statusMap[status] || status;
+  };
+
+  // Функция для получения цвета статуса
+  const getStatusColor = (status: string) => {
+    if (status === 'ACTIVE') return 'var(--accent-success)';
+    if (status === 'PROGRESS') return 'var(--accent-warning)';
+    if (status === 'NOT PAID' || status === 'NOT_PAID') return 'var(--accent-danger)';
+    return 'var(--theme-content-text-muted)';
+  };
+
+  // Функция для получения иконки статуса
+  const getStatusIcon = (status: string) => {
+    if (status === 'ACTIVE') {
+      return <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent-success)' }} />;
+    }
+    if (status === 'PROGRESS') {
+      return <div className="animate-spin rounded-full h-4 w-4 border-b-2" style={{ borderColor: 'var(--accent-warning)' }}></div>;
+    }
+    return <XCircle className="w-4 h-4" style={{ color: 'var(--accent-danger)' }} />;
   };
 
   if (loading) {
@@ -254,17 +325,9 @@ function Subscription() {
                   Статус:
                 </label>
                 <div className="flex items-center gap-2">
-                  {subscriptionInfo.status === 'ACTIVE' ? (
-                    <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent-success)' }} />
-                  ) : (
-                    <XCircle className="w-4 h-4" style={{ color: 'var(--accent-danger)' }} />
-                  )}
-                  <span style={{
-                    color: subscriptionInfo.status === 'ACTIVE'
-                      ? 'var(--accent-success)'
-                      : 'var(--accent-danger)'
-                  }}>
-                    {subscriptionInfo.status}
+                  {getStatusIcon(subscriptionInfo.status)}
+                  <span style={{ color: getStatusColor(subscriptionInfo.status) }}>
+                    {getStatusText(subscriptionInfo.status)}
                   </span>
                 </div>
               </div>
