@@ -19,12 +19,21 @@ export default function ChangeServiceModal({
 }: ChangeServiceModalProps) {
   const [services, setServices] = useState<any[]>([]);
   const [loadingServices, setLoadingServices] = useState(false);
-  const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
+  const [selectedServiceId, setSelectedServiceId] = useState<number | null | undefined>(null);
   const [finishActive, setFinishActive] = useState(0);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (open) {
+      // Устанавливаем значение по умолчанию на основе next
+      if (userServiceData?.next === -1) {
+        setSelectedServiceId(-1);
+      } else if (userServiceData?.next === null || userServiceData?.next === undefined) {
+        setSelectedServiceId(0);
+      } else {
+        setSelectedServiceId(userServiceData?.next);
+      }
+      
       setLoadingServices(true);
       shm_request('shm/v1/admin/service?limit=100')
         .then(res => {
@@ -39,10 +48,10 @@ export default function ChangeServiceModal({
       setSelectedServiceId(null);
       setFinishActive(0);
     }
-  }, [open]);
+  }, [open, userServiceData]);
 
   const handleSave = async () => {
-    if (!selectedServiceId || !userServiceData) {
+    if (selectedServiceId === null || selectedServiceId === undefined || !userServiceData) {
       toast.error('Выберите услугу');
       return;
     }
@@ -104,7 +113,7 @@ export default function ChangeServiceModal({
       </button>
       <button
         onClick={handleSave}
-        disabled={saving || !selectedServiceId}
+        disabled={saving || selectedServiceId === null || selectedServiceId === undefined}
         className="px-4 py-2 rounded flex items-center gap-2 disabled:opacity-50 btn-success"
         style={{
           backgroundColor: 'var(--accent-primary)',
@@ -214,10 +223,11 @@ export default function ChangeServiceModal({
               className="w-full px-3 py-2 text-sm rounded border"
               style={inputStyles}
             >
-              <option value="">Выберите услугу...</option>
+              <option value="null">Не изменять</option>
+              <option value="-1">Удалить по истечению</option>
               {services.map(s => (
                 <option key={s.service_id} value={s.service_id}>
-                  {s.name}
+                  {s.name} (ID: {s.service_id})
                 </option>
               ))}
             </select>
@@ -226,7 +236,7 @@ export default function ChangeServiceModal({
           {/* Опция времени смены */}
           <div>
             <label className="text-sm font-medium mb-2 block" style={labelStyles}>
-              Время смены тарифа
+              Тип смены тарифа
             </label>
             <div className="space-y-2">
               <label className="flex items-center gap-3 cursor-pointer">
@@ -265,7 +275,7 @@ export default function ChangeServiceModal({
           </div>
 
           {/* Предупреждение */}
-          {selectedServiceId && (
+          {selectedServiceId ? (
             <div
               className="px-4 py-3 rounded border-l-4"
               style={{
@@ -281,7 +291,7 @@ export default function ChangeServiceModal({
                 " будет {finishActive === 1 ? 'применена немедленно' : 'заменена новым тарифом'}.
               </div>
             </div>
-          )}
+          ) : null}
         </div>
       )}
     </Modal>
