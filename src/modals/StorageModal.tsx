@@ -136,58 +136,62 @@ export default function StorageModal({
   };
 
   const renderFooter = () => (
-    <div className="flex justify-between items-center w-full">
-      <div className="flex gap-2">
+    <div className="flex flex-col sm:flex-row justify-between items-center w-full gap-2">
+      <div className="flex gap-2 flex-wrap">
         <button
           onClick={handleDownload}
-          className="px-4 py-2 rounded flex items-center gap-2 btn-primary"
+          className="p-2 rounded flex items-center gap-2 btn-primary"
           style={{
             backgroundColor: 'var(--accent-primary)',
             color: 'var(--accent-text)',
           }}
+          title="Скачать"
         >
           <Download className="w-4 h-4" />
-          Скачать
+          <span className="hidden sm:inline">Скачать</span>
         </button>
         {onDelete && (
           <button
             onClick={() => setConfirmDeleteOpen(true)}
-            className="px-4 py-2 rounded flex items-center gap-2 btn-danger"
+            className="p-2 rounded flex items-center gap-2 btn-danger"
             style={{
               backgroundColor: 'var(--theme-button-danger-bg)',
               color: 'var(--theme-button-danger-text)',
               border: '1px solid var(--theme-button-danger-border)',
             }}
+            title="Удалить"
           >
             <Trash2 className="w-4 h-4" />
-            Удалить
+            <span className="hidden sm:inline">Удалить</span>
           </button>
         )}
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap justify-end">
         <button
           onClick={onClose}
-          className="px-4 py-2 rounded flex items-center gap-2"
+          className="p-2 rounded flex items-center gap-2"
           style={{
             backgroundColor: 'var(--theme-button-secondary-bg)',
             color: 'var(--theme-button-secondary-text)',
             border: '1px solid var(--theme-button-secondary-border)',
           }}
+          title="Закрыть"
         >
           <X className="w-4 h-4" />
-          Закрыть
+          <span className="hidden sm:inline">Закрыть</span>
         </button>
         {isJsonMode && (
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 rounded flex items-center gap-2 disabled:opacity-50 btn-success"
+            className="p-2 rounded flex items-center gap-2 disabled:opacity-50 btn-success"
             style={{
               backgroundColor: 'var(--accent-primary)',
               color: 'var(--accent-text)',
             }}
+            title="Сохранить"
           >
-            {saving ? 'Сохранение...' : 'Сохранить'}
+            <span className="hidden sm:inline">{saving ? 'Сохранение...' : 'Сохранить'}</span>
           </button>
         )}
       </div>

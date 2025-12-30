@@ -3,7 +3,7 @@ import Modal from '../components/Modal';
 import ConfirmModal from '../components/ConfirmModal';
 import WithdrawModal from './WithdrawModal';
 import ChangeServiceModal from './ChangeServiceModal';
-import { Save, Trash2, X, Loader2, ChevronDown, Receipt, RefreshCw } from 'lucide-react';
+import { Save, Trash2, X, Loader2, ChevronDown, RussianRuble } from 'lucide-react';
 import toast from 'react-hot-toast';
 import JsonEditor from '../components/JsonEditor';
 import UserSelect from '../components/UserSelect';
@@ -238,43 +238,46 @@ export default function UserServiceModal({
   const statusConfig = STATUS_CONFIG[formData.status] || { label: formData.status, color: '#6b7280', bgColor: '#f3f4f6' };
 
   const renderFooter = () => (
-    <div className="flex justify-between w-full">
+    <div className="flex flex-col sm:flex-row justify-between w-full gap-2">
       <div>
         {onDelete && canDelete && (
           <button
             onClick={handleDelete}
             disabled={deleting}
-            className="px-4 py-2 rounded flex items-center gap-2 bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+            className="p-2 rounded flex items-center gap-2 bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+            title="Удалить"
           >
             <Trash2 className="w-4 h-4" />
-            {deleting ? 'Удаление...' : 'Удалить'}
+            <span className="hidden sm:inline">{deleting ? 'Удаление...' : 'Удалить'}</span>
           </button>
         )}
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap justify-end">
         <button
           onClick={onClose}
-          className="px-4 py-2 rounded flex items-center gap-2"
+          className="p-2 rounded flex items-center gap-2"
           style={{
             backgroundColor: 'var(--theme-button-secondary-bg)',
             color: 'var(--theme-button-secondary-text)',
             border: '1px solid var(--theme-button-secondary-border)',
           }}
+          title="Отмена"
         >
           <X className="w-4 h-4" />
-          Отмена
+          <span className="hidden sm:inline">Отмена</span>
         </button>
         <button
           onClick={handleSave}
           disabled={saving}
-          className="px-4 py-2 rounded flex items-center gap-2 btn-success disabled:opacity-50"
+          className="p-2 rounded flex items-center gap-2 btn-success disabled:opacity-50"
           style={{
             backgroundColor: 'var(--accent-primary)',
             color: 'var(--accent-text)',
           }}
+          title="Сохранить"
         >
           <Save className="w-4 h-4" />
-          {saving ? 'Сохранение...' : 'Сохранить'}
+          <span className="hidden sm:inline">{saving ? 'Сохранение...' : 'Сохранить'}</span>
         </button>
       </div>
     </div>
@@ -325,8 +328,8 @@ export default function UserServiceModal({
           </div>
         </div>
 
-        {}
-        <div className="grid grid-cols-3 gap-6">
+        {/* Статус, Биллинг, Смена тарифа */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           <div className="flex items-center gap-3">
             <label className="w-32 text-sm font-medium shrink-0" style={labelStyles}>
               Статус
@@ -409,7 +412,7 @@ export default function UserServiceModal({
               )}
             </label>
           </div>
-          
+
           <div className="flex items-center gap-3">
           <label className="w-32 text-sm font-medium shrink-0" style={labelStyles}>
             Смена тарифа:
@@ -430,8 +433,8 @@ export default function UserServiceModal({
             </div>
         </div>
 
-        {}
-        <div className="grid grid-cols-2 gap-6">
+        {/* Стоимость и Действует до */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div className="flex items-center gap-3">
             <label className="w-32 text-sm font-medium shrink-0" style={labelStyles}>
               Стоимость
@@ -468,7 +471,7 @@ export default function UserServiceModal({
                   }}
                   title="Списания"
                 >
-                  <Receipt className="w-4 h-4" />
+                  <RussianRuble className="w-4 h-4" />
                 </button>
               )}
             </div>

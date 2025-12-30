@@ -96,70 +96,75 @@ export default function UserModal({
   };
 
   const renderFooter = () => (
-    <div className="flex justify-between w-full">
+    <div className="flex flex-col sm:flex-row justify-between w-full gap-2">
       <div>
         {onDelete && (
           <button
             onClick={handleDelete}
             disabled={deleting}
-            className="px-4 py-2 rounded flex items-center gap-2 bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+            className="p-2 rounded flex items-center gap-2 bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+            title="Удалить"
           >
             <Trash2 className="w-4 h-4" />
-            {deleting ? 'Удаление...' : 'Удалить'}
+            <span className="hidden sm:inline">{deleting ? 'Удаление...' : 'Удалить'}</span>
           </button>
         )}
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap justify-end">
           <button
             onClick={onCliLogin}
-            className="px-4 py-2 rounded flex items-center gap-2 btn-primary"
+            className="p-2 rounded flex items-center gap-2"
             style={{
               backgroundColor: 'var(--theme-button-secondary-bg)',
               color: 'var(--theme-button-secondary-text)',
               border: '1px solid var(--theme-button-secondary-border)',
             }}
+            title="В кабинет"
           >
             <User className="w-4 h-4" />
-            В кабинет
+            <span className="hidden sm:inline">В кабинет</span>
           </button>
         {onChangePassword && (
           <button
             onClick={onChangePassword}
-            className="px-4 py-2 rounded flex items-center gap-2"
+            className="p-2 rounded flex items-center gap-2"
             style={{
               backgroundColor: 'var(--theme-button-secondary-bg)',
               color: 'var(--theme-button-secondary-text)',
               border: '1px solid var(--theme-button-secondary-border)',
             }}
+            title="Сменить пароль"
           >
             <Key className="w-4 h-4" />
-            Сменить пароль
+            <span className="hidden sm:inline">Сменить пароль</span>
           </button>
         )}
 
         <button
           onClick={onClose}
-          className="px-4 py-2 rounded flex items-center gap-2"
+          className="p-2 rounded flex items-center gap-2"
           style={{
             backgroundColor: 'var(--theme-button-secondary-bg)',
             color: 'var(--theme-button-secondary-text)',
             border: '1px solid var(--theme-button-secondary-border)',
           }}
+          title="Отмена"
         >
           <X className="w-4 h-4" />
-          Отмена
+          <span className="hidden sm:inline">Отмена</span>
         </button>
         <button
           onClick={handleSave}
           disabled={saving}
-          className="px-4 py-2 rounded flex items-center gap-2 btn-success"
+          className="p-2 rounded flex items-center gap-2 btn-success"
           style={{
             backgroundColor: 'var(--accent-primary)',
             color: 'var(--accent-text)',
           }}
+          title="Сохранить"
         >
           <Save className="w-4 h-4" />
-          {saving ? 'Сохранение...' : 'Сохранить'}
+          <span className="hidden sm:inline">{saving ? 'Сохранение...' : 'Сохранить'}</span>
         </button>
       </div>
     </div>
@@ -174,7 +179,7 @@ export default function UserModal({
       size="xl"
     >
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div className="flex items-center gap-3">
             <label className="w-28 text-sm font-medium shrink-0" style={labelStyles}>
               ID
@@ -189,7 +194,7 @@ export default function UserModal({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div className="flex items-center gap-3">
             <label className="w-28 text-sm font-medium shrink-0" style={labelStyles}>
               Логин <span className="text-red-500">*</span>
@@ -216,7 +221,7 @@ export default function UserModal({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div className="flex items-center gap-3">
             <label className="w-28 text-sm font-medium shrink-0" style={labelStyles}>
               Полное имя
@@ -243,7 +248,7 @@ export default function UserModal({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div className="flex items-center gap-3">
             <label className="w-28 text-sm font-medium shrink-0" style={labelStyles}>
                Дата создания
@@ -270,7 +275,7 @@ export default function UserModal({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div className="flex items-center gap-3">
             <label className="w-28 text-sm font-medium shrink-0" style={labelStyles}>
               Баланс
@@ -319,7 +324,7 @@ export default function UserModal({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div className="flex items-center gap-3">
             <label className="w-28 text-sm font-medium shrink-0" style={labelStyles}>
               Кредит
@@ -358,7 +363,7 @@ export default function UserModal({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div className="flex items-center gap-3">
             <label className="w-28 text-sm font-medium shrink-0" style={labelStyles}>
               Заблокирован

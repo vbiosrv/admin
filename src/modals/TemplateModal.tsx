@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Modal from '../components/Modal';
-import { Save, X, Trash2, Play, Maximize2, Minimize2, FileText, Download } from 'lucide-react';
+import { Save, X, Trash2, Play, Maximize2, Minimize2, FileText, Download, Minus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Editor from '@monaco-editor/react';
 import JsonEditor from '../components/JsonEditor';
@@ -542,29 +542,30 @@ export default function TemplateModal({
   };
 
   const renderFooter = () => (
-    <div className="flex justify-between items-center w-full">
-      <div className="flex gap-2">
+    <div className="flex flex-col sm:flex-row justify-between items-center w-full gap-2">
+      <div className="flex gap-2 flex-wrap">
         {isFullscreen && (
           <>
             {!isAdd && onDelete && (
               <button
                 onClick={() => setConfirmDeleteOpen(true)}
-                className="px-4 py-2 rounded flex items-center gap-2 btn-danger"
+                className="p-2 rounded flex items-center gap-2 btn-danger"
                 style={{
                   backgroundColor: 'var(--theme-button-danger-bg)',
                   color: 'var(--theme-button-danger-text)',
                   border: '1px solid var(--theme-button-danger-border)',
                 }}
+                title="Удалить"
               >
                 <Trash2 className="w-4 h-4" />
-                Удалить
+                <span className="hidden sm:inline">Удалить</span>
               </button>
             )}
             <button
               onClick={() => {
                 setIsMinimized(true);
               }}
-              className="px-4 py-2 rounded flex items-center gap-2"
+              className="p-2 rounded flex items-center gap-2"
               title="Свернуть"
               style={{
                 backgroundColor: 'var(--theme-button-secondary-bg)',
@@ -572,12 +573,12 @@ export default function TemplateModal({
                 border: '1px solid var(--theme-button-secondary-border)',
               }}
             >
-              <Minimize2 className="w-4 h-4" />
-              Свернуть
+              <Minus className="w-4 h-4" />
+              <span className="hidden sm:inline">Свернуть</span>
             </button>
             <button
               onClick={() => setIsFullscreen(false)}
-              className="px-4 py-2 rounded flex items-center gap-2"
+              className="p-2 rounded flex items-center gap-2"
               title="Обычный режим"
               style={{
                 backgroundColor: 'var(--theme-button-secondary-bg)',
@@ -586,28 +587,29 @@ export default function TemplateModal({
               }}
             >
               <Maximize2 className="w-4 h-4" style={{ transform: 'rotate(180deg)' }} />
-              Обычный режим
+              <span className="hidden sm:inline">Обычный режим</span>
             </button>
           </>
         )}
         {!isFullscreen && !isAdd && onDelete && (
           <button
             onClick={() => setConfirmDeleteOpen(true)}
-            className="px-4 py-2 rounded flex items-center gap-2 btn-danger"
+            className="p-2 rounded flex items-center gap-2 btn-danger"
             style={{
               backgroundColor: 'var(--theme-button-danger-bg)',
               color: 'var(--theme-button-danger-text)',
               border: '1px solid var(--theme-button-danger-border)',
             }}
+            title="Удалить"
           >
             <Trash2 className="w-4 h-4" />
-            Удалить
+            <span className="hidden sm:inline">Удалить</span>
           </button>
         )}
         {!isFullscreen && (
           <button
             onClick={() => setIsFullscreen(!isFullscreen)}
-            className="px-4 py-2 rounded flex items-center gap-2"
+            className="p-2 rounded flex items-center gap-2"
             title={isFullscreen ? 'Обычный режим' : 'На весь экран'}
             style={{
               backgroundColor: 'var(--theme-button-secondary-bg)',
@@ -616,48 +618,51 @@ export default function TemplateModal({
             }}
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            {isFullscreen ? 'Обычный' : 'На весь экран'}
+            <span className="hidden sm:inline">{isFullscreen ? 'Обычный' : 'На весь экран'}</span>
           </button>
         )}
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap justify-end">
         <button
           onClick={handleDownload}
           disabled={saving || !formData.id || isAdd}
-          className="px-4 py-2 rounded flex items-center gap-2 disabled:opacity-50 btn-success"
+          className="p-2 rounded flex items-center gap-2 disabled:opacity-50 btn-success"
           style={{
             backgroundColor: 'var(--theme-button-info-bg)',
             color: 'var(--theme-button-info-text)',
             border: '1px solid var(--theme-button-info-border)',
           }}
+          title="Скачать"
         >
           <Download className="w-4 h-4" />
-          Скачать
+          <span className="hidden sm:inline">Скачать</span>
         </button>
         <button
           onClick={handleSaveAndTest}
           disabled={saving || !formData.id || isAdd}
-          className="px-4 py-2 rounded flex items-center gap-2 disabled:opacity-50 btn-primary"
+          className="p-2 rounded flex items-center gap-2 disabled:opacity-50 btn-primary"
           style={{
             backgroundColor: 'var(--theme-button-info-bg)',
             color: 'var(--theme-button-info-text)',
             border: '1px solid var(--theme-button-info-border)',
           }}
+          title="Save & Render"
         >
           <Play className="w-4 h-4" />
-          Save & Render
+          <span className="hidden sm:inline">Save & Render</span>
         </button>
         <button
           onClick={handleSave}
           disabled={saving || !formData.id}
-          className="px-4 py-2 rounded flex items-center gap-2 disabled:opacity-50 btn-success"
+          className="p-2 rounded flex items-center gap-2 disabled:opacity-50 btn-success"
           style={{
             backgroundColor: 'var(--accent-primary)',
             color: 'var(--accent-text)',
           }}
+          title="Сохранить"
         >
           <Save className="w-4 h-4" />
-          {saving ? 'Сохранение...' : 'Сохранить'}
+          <span className="hidden sm:inline">{saving ? 'Сохранение...' : 'Сохранить'}</span>
         </button>
       </div>
     </div>
@@ -808,7 +813,7 @@ export default function TemplateModal({
                   border: '1px solid var(--theme-button-secondary-border)',
                 }}
               >
-                <Minimize2 className="w-4 h-4" />
+                <Minus className="w-4 h-4" />
               </button>
               <button
                 onClick={handleCloseTab}
@@ -1082,9 +1087,11 @@ export default function TemplateModal({
 
           {}
           <div className="flex items-start gap-3">
-            <label className="w-24 text-sm font-medium shrink-0 pt-2" style={labelStyles}>
-              Данные
-            </label>
+            <span className="hidden sm:inline">
+              <label className="w-24 text-sm font-medium shrink-0 pt-2" style={labelStyles}>
+                Данные
+              </label>
+            </span>
             <div className="flex-1 border rounded overflow-hidden" style={{ borderColor: inputStyles.borderColor }}>
               <Editor
                 height="400px"

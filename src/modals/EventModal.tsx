@@ -153,42 +153,45 @@ export default function EventModal({
         {data?.id && onDelete && (
           <button
             onClick={() => setConfirmDeleteOpen(true)}
-            className="px-4 py-2 rounded flex items-center gap-2 btn-danger"
+            className="p-2 rounded flex items-center gap-2 btn-danger"
             style={{
               backgroundColor: 'var(--theme-button-danger-bg)',
               color: 'var(--theme-button-danger-text)',
               border: '1px solid var(--theme-button-danger-border)',
             }}
+            title="Удалить"
           >
             <Trash2 className="w-4 h-4" />
-            Удалить
+            <span className="hidden sm:inline">Удалить</span>
           </button>
         )}
       </div>
       <div className="flex gap-2">
         <button
           onClick={onClose}
-          className="px-4 py-2 rounded flex items-center gap-2"
+          className="p-2 rounded flex items-center gap-2"
           style={{
             backgroundColor: 'var(--theme-button-secondary-bg)',
             color: 'var(--theme-button-secondary-text)',
             border: '1px solid var(--theme-button-secondary-border)',
           }}
+          title="Отмена"
         >
           <X className="w-4 h-4" />
-          Отмена
+          <span className="hidden sm:inline">Отмена</span>
         </button>
         <button
           onClick={handleSave}
           disabled={saving}
-          className="px-4 py-2 rounded flex items-center gap-2 disabled:opacity-50 btn-success"
+          className="p-2 rounded flex items-center gap-2 disabled:opacity-50 btn-success"
           style={{
             backgroundColor: 'var(--accent-primary)',
             color: 'var(--accent-text)',
           }}
+          title="Сохранить"
         >
           <Save className="w-4 h-4" />
-          {saving ? 'Сохранение...' : 'Сохранить'}
+          <span className="hidden sm:inline">{saving ? 'Сохранение...' : 'Сохранить'}</span>
         </button>
       </div>
     </div>

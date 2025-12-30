@@ -39,15 +39,16 @@ export default function BonusModal({
     <div className="flex justify-end gap-2 w-full">
       <button
         onClick={onClose}
-        className="px-4 py-2 rounded flex items-center gap-2"
+        className="p-2 rounded flex items-center gap-2"
         style={{
           backgroundColor: 'var(--theme-button-secondary-bg)',
           color: 'var(--theme-button-secondary-text)',
           border: '1px solid var(--theme-button-secondary-border)',
         }}
+        title="Закрыть"
       >
         <X className="w-4 h-4" />
-        Закрыть
+        <span className="hidden sm:inline">Закрыть</span>
       </button>
     </div>
   );

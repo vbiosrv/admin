@@ -79,27 +79,29 @@ export default function TemplateCreateModal({
     <div className="flex justify-end gap-2 w-full">
       <button
         onClick={onClose}
-        className="px-4 py-2 rounded flex items-center gap-2"
+        className="p-2 rounded flex items-center gap-2"
         style={{
           backgroundColor: 'var(--theme-button-secondary-bg)',
           color: 'var(--theme-button-secondary-text)',
           border: '1px solid var(--theme-button-secondary-border)',
         }}
+        title="Отмена"
       >
         <X className="w-4 h-4" />
-        Отмена
+        <span className="hidden sm:inline">Отмена</span>
       </button>
       <button
         onClick={handleSave}
         disabled={saving || !formData.id}
-        className="px-4 py-2 rounded flex items-center gap-2 disabled:opacity-50 btn-primary"
+        className="p-2 rounded flex items-center gap-2 disabled:opacity-50 btn-primary"
         style={{
           backgroundColor: 'var(--accent-primary)',
           color: 'var(--accent-text)',
         }}
+        title="Создать"
       >
         <Plus className="w-4 h-4" />
-        {saving ? 'Создание...' : 'Создать'}
+        <span className="hidden sm:inline">{saving ? 'Создание...' : 'Создать'}</span>
       </button>
     </div>
   );

@@ -138,27 +138,29 @@ export default function ServiceCreateModal({
     <div className="flex justify-end gap-2">
       <button
         onClick={onClose}
-        className="px-4 py-2 rounded flex items-center gap-2"
+        className="p-2 rounded flex items-center gap-2"
         style={{
           backgroundColor: 'var(--theme-button-secondary-bg)',
           color: 'var(--theme-button-secondary-text)',
           border: '1px solid var(--theme-button-secondary-border)',
         }}
+        title="Отмена"
       >
         <X className="w-4 h-4" />
-        Отмена
+        <span className="hidden sm:inline">Отмена</span>
       </button>
       <button
         onClick={handleCreate}
         disabled={saving}
-        className="px-4 py-2 rounded flex items-center gap-2 disabled:opacity-50 btn-success"
+        className="p-2 rounded flex items-center gap-2 disabled:opacity-50 btn-success"
         style={{
           backgroundColor: 'var(--accent-primary)',
           color: 'var(--accent-text)',
         }}
+        title="Создать"
       >
         <Save className="w-4 h-4" />
-        {saving ? 'Создание...' : 'Создать'}
+        <span className="hidden sm:inline">{saving ? 'Создание...' : 'Создать'}</span>
       </button>
     </div>
   );
@@ -171,9 +173,9 @@ export default function ServiceCreateModal({
       footer={renderFooter()}
       size="xl"
     >
-      <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-        <div className="col-span-2 flex items-center gap-3">
-          <label className="w-40 text-sm font-medium" style={labelStyles}>Название *</label>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+        <div className="col-span-1 md:col-span-2 flex flex-col md:flex-row md:items-center gap-3">
+          <label className="w-40 text-sm font-medium shrink-0" style={labelStyles}>Название *</label>
           <input
             type="text"
             value={formData.name}
@@ -209,14 +211,14 @@ export default function ServiceCreateModal({
           />
         </div>
 
-        <div className="col-span-2 flex items-center gap-3">
-          <label className="w-40 text-sm font-medium" style={labelStyles}>Период услуги</label>
+        <div className="col-span-1 md:col-span-2 flex flex-col md:flex-row md:items-center gap-3">
+          <label className="w-40 text-sm font-medium shrink-0" style={labelStyles}>Период услуги</label>
           <input
             type="number"
             value={formData.period}
             onChange={(e) => handleChange('period', e.target.value)}
             disabled={formData.once_service}
-            className="w-32 px-3 py-2 text-sm rounded border disabled:opacity-60"
+            className="w-full md:w-32 px-3 py-2 text-sm rounded border disabled:opacity-60"
             style={inputStyles}
             min="0"
             max="120"
@@ -225,8 +227,8 @@ export default function ServiceCreateModal({
           <span className="text-xs" style={labelStyles}>M.DDHH (M - месяцы, DD - дни, HH - часы)</span>
         </div>
 
-        <div className="col-span-2 flex items-center gap-3">
-          <label className="w-40 text-sm font-medium" style={labelStyles}>Следующая услуга</label>
+        <div className="col-span-1 md:col-span-2 flex flex-col md:flex-row md:items-center gap-3">
+          <label className="w-40 text-sm font-medium shrink-0" style={labelStyles}>Следующая услуга</label>
           <select
             value={formData.next === null ? 'null' : formData.next === undefined ? 'null' : formData.next}
             onChange={(e) => {
@@ -247,10 +249,10 @@ export default function ServiceCreateModal({
           </select>
         </div>
 
-        <div className="col-span-2 border-t pt-4 mt-2" style={{ borderColor: 'var(--theme-card-border)' }}>
+        <div className="col-span-1 md:col-span-2 border-t pt-4 mt-2" style={{ borderColor: 'var(--theme-card-border)' }}>
           <label className="block text-sm font-medium mb-3" style={labelStyles}>Биллинг</label>
 
-          <div className="grid grid-cols-2 gap-x-6 gap-y-2 ml-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 ml-4">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -371,7 +373,7 @@ export default function ServiceCreateModal({
             </label>
 
             {formData.config?.hasOwnProperty('limit_bonus_percent') && (
-              <div className="col-span-2 flex items-center gap-3 ml-6 mt-2">
+              <div className="col-span-1 md:col-span-2 flex items-center gap-3 ml-6 mt-2">
                 <label className="text-sm" style={labelStyles}>Процент оплаты бонусами:</label>
                 <div className="flex items-center gap-1">
                   <input
@@ -395,8 +397,8 @@ export default function ServiceCreateModal({
           </div>
         </div>
 
-        <div className="col-span-2 flex items-start gap-3">
-          <label className="w-40 text-sm font-medium pt-2" style={labelStyles}>Описание</label>
+        <div className="col-span-1 md:col-span-2 flex flex-col md:flex-row md:items-start gap-3">
+          <label className="w-40 text-sm font-medium pt-2 shrink-0" style={labelStyles}>Описание</label>
           <textarea
             value={formData.descr}
             onChange={(e) => handleChange('descr', e.target.value)}
@@ -406,8 +408,8 @@ export default function ServiceCreateModal({
           />
         </div>
 
-        <div className="col-span-2 flex items-start gap-3">
-          <label className="w-40 text-sm font-medium pt-2" style={labelStyles}>Конфигурация</label>
+        <div className="col-span-1 md:col-span-2 flex flex-col md:flex-row md:items-start gap-3">
+          <label className="w-40 text-sm font-medium pt-2 shrink-0" style={labelStyles}>Конфигурация</label>
           <div className="flex-1">
             <JsonEditor
               data={formData.config}

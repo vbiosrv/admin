@@ -89,14 +89,14 @@ function Templates() {
         <div className="flex items-center">
           <h2 className="text-xl font-bold">Шаблоны</h2>
         </div>
-        <div className="flex gap-2">
           <button
             onClick={() => setUploadModalOpen(true)}
             className="px-3 py-1.5 rounded flex items-center gap-2 text-sm font-medium btn-success"
             title="Загрузить из файла"
           >
             <Upload className="w-4 h-4" />
-            Загрузить из файла
+            
+          <span className="hidden sm:inline">Загрузить из файла</span>
           </button>
           <button
             onClick={() => setCreateModalOpen(true)}
@@ -110,7 +110,6 @@ function Templates() {
             <Plus className="w-4 h-4" />
             Добавить
           </button>
-        </div>
       </div>
       <DataTable
         columns={templateColumns}

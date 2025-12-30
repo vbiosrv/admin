@@ -72,27 +72,29 @@ export default function TemplateTestModal({
     <div className="flex justify-end items-center w-full gap-2">
       <button
         onClick={handleClose}
-        className="px-4 py-2 rounded flex items-center gap-2"
+        className="p-2 rounded flex items-center gap-2"
         style={{
           backgroundColor: 'var(--theme-button-secondary-bg)',
           color: 'var(--theme-button-secondary-text)',
           border: '1px solid var(--theme-button-secondary-border)',
         }}
+        title="Закрыть"
       >
         <X className="w-4 h-4" />
-        Закрыть
+        <span className="hidden sm:inline">Закрыть</span>
       </button>
       <button
         onClick={handleRender}
         disabled={rendering || !userId}
-        className="px-4 py-2 rounded flex items-center gap-2 disabled:opacity-50 btn-primary"
+        className="p-2 rounded flex items-center gap-2 disabled:opacity-50 btn-primary"
         style={{
           backgroundColor: 'var(--accent-primary)',
           color: 'var(--accent-text)',
         }}
+        title="Render"
       >
         <Play className="w-4 h-4" />
-        {rendering ? 'Рендер...' : 'Render'}
+        <span className="hidden sm:inline">{rendering ? 'Рендер...' : 'Render'}</span>
       </button>
     </div>
   );

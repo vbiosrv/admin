@@ -90,28 +90,30 @@ export function TemplateUploadModal({ open, onClose, onSave }: TemplateUploadMod
     <div className="flex justify-between w-full">
       <button
         onClick={handleClose}
-        className="px-4 py-2 rounded flex items-center gap-2"
+        className="p-2 rounded flex items-center gap-2"
         style={{
           backgroundColor: 'var(--theme-button-secondary-bg)',
           color: 'var(--theme-button-secondary-text)',
           border: '1px solid var(--theme-button-secondary-border)',
         }}
         disabled={loading}
+        title="Отмена"
       >
         <X className="w-4 h-4" />
-        Отмена
+        <span className="hidden sm:inline">Отмена</span>
       </button>
       <button
         onClick={handleSave}
         disabled={!id || !fileContent || loading}
-        className="px-4 py-2 rounded flex items-center gap-2 btn-success"
+        className="p-2 rounded flex items-center gap-2 btn-success"
         style={{
           backgroundColor: 'var(--accent-primary)',
           color: 'var(--accent-text)',
         }}
+        title="Загрузить"
       >
         <Upload className="w-4 h-4" />
-        {loading ? 'Загрузка...' : 'Загрузить'}
+        <span className="hidden sm:inline">{loading ? 'Загрузка...' : 'Загрузить'}</span>
       </button>
     </div>
   );

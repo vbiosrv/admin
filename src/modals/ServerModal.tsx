@@ -202,95 +202,101 @@ export default function ServerModal({
   };
 
   const renderFooter = () => (
-    <div className="flex justify-between w-full">
+    <div className="flex flex-col sm:flex-row justify-between w-full gap-2">
       <div className="flex gap-2">
         {data?.server_id && onDelete && (
           <button
             onClick={() => setConfirmDeleteOpen(true)}
-            className="px-4 py-2 rounded flex items-center gap-2 btn-danger"
+            className="p-2 rounded flex items-center gap-2 btn-danger"
             style={{
               backgroundColor: 'var(--theme-button-danger-bg)',
               color: 'var(--theme-button-danger-text)',
               border: '1px solid var(--theme-button-danger-border)',
             }}
+            title="Удалить"
           >
             <Trash2 className="w-4 h-4" />
-            Удалить
+            <span className="hidden sm:inline">Удалить</span>
           </button>
         )}
       </div>
-      <div className="flex gap-2">
-        {}
+      <div className="flex gap-2 flex-wrap justify-end">
+        {/* TEST SSH */}
         {transport === 'ssh' && (
           <button
             onClick={handleTestSSH}
             disabled={testing || !formData.host}
-            className="px-4 py-2 rounded flex items-center gap-2 disabled:opacity-50 btn-primary"
+            className="p-2 rounded flex items-center gap-2 disabled:opacity-50 btn-primary"
             style={{
               backgroundColor: 'var(--accent-info)',
               color: 'white',
             }}
+            title="TEST SSH"
           >
             <Terminal className="w-4 h-4" />
-            {testing ? 'Тестирование...' : 'TEST SSH'}
+            <span className="hidden sm:inline">{testing ? 'Тестирование...' : 'TEST SSH'}</span>
           </button>
         )}
 
-        {}
+        {/* INIT */}
         {transport === 'ssh' && mode === 'template' && data?.server_id && (
           <button
             onClick={handleTemplateInit}
             disabled={testing || !formData.host}
-            className="px-4 py-2 rounded flex items-center gap-2 disabled:opacity-50"
+            className="p-2 rounded flex items-center gap-2 disabled:opacity-50"
             style={{
               backgroundColor: 'var(--accent-success)',
               color: 'white',
             }}
+            title="INIT"
           >
             <Play className="w-4 h-4" />
-            {testing ? 'Выполнение...' : 'INIT'}
+            <span className="hidden sm:inline">{testing ? 'Выполнение...' : 'INIT'}</span>
           </button>
         )}
 
-        {}
+        {/* TEST MAIL */}
         {transport === 'mail' && (
           <button
             onClick={handleTestMail}
             disabled={testing}
-            className="px-4 py-2 rounded flex items-center gap-2 disabled:opacity-50"
+            className="p-2 rounded flex items-center gap-2 disabled:opacity-50"
             style={{
               backgroundColor: 'var(--accent-info)',
               color: 'white',
             }}
+            title="TEST MAIL"
           >
             <Mail className="w-4 h-4" />
-            {testing ? 'Отправка...' : 'TEST MAIL'}
+            <span className="hidden sm:inline">{testing ? 'Отправка...' : 'TEST MAIL'}</span>
           </button>
         )}
 
         <button
           onClick={onClose}
-          className="px-4 py-2 rounded flex items-center gap-2"
+          className="p-2 rounded flex items-center gap-2"
           style={{
             backgroundColor: 'var(--theme-button-secondary-bg)',
             color: 'var(--theme-button-secondary-text)',
             border: '1px solid var(--theme-button-secondary-border)',
           }}
+          title="Отмена"
         >
           <X className="w-4 h-4" />
-          Отмена
+          <span className="hidden sm:inline">Отмена</span>
         </button>
         <button
           onClick={handleSave}
           disabled={saving}
-          className="px-4 py-2 rounded flex items-center gap-2 disabled:opacity-50 btn-success"
+          className="p-2 rounded flex items-center gap-2 disabled:opacity-50 btn-success"
           style={{
             backgroundColor: 'var(--accent-primary)',
             color: 'var(--accent-text)',
           }}
+          title="Сохранить"
         >
           <Save className="w-4 h-4" />
-          {saving ? 'Сохранение...' : 'Сохранить'}
+          <span className="hidden sm:inline">{saving ? 'Сохранение...' : 'Сохранить'}</span>
         </button>
       </div>
     </div>
@@ -309,26 +315,28 @@ export default function ServerModal({
                 setShowConsole(false);
                 setConsolePipelineId(null);
               }}
-              className="px-4 py-2 rounded flex items-center gap-2"
+              className="p-2 rounded flex items-center gap-2"
               style={{
                 backgroundColor: 'var(--theme-button-secondary-bg)',
                 color: 'var(--theme-button-secondary-text)',
                 border: '1px solid var(--theme-button-secondary-border)',
               }}
+              title="Назад"
             >
-              Назад
+              <span className="hidden sm:inline">Назад</span>
             </button>
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded flex items-center gap-2"
+              className="p-2 rounded flex items-center gap-2"
               style={{
                 backgroundColor: 'var(--theme-button-secondary-bg)',
                 color: 'var(--theme-button-secondary-text)',
                 border: '1px solid var(--theme-button-secondary-border)',
               }}
+              title="Закрыть"
             >
               <X className="w-4 h-4" />
-              Закрыть
+              <span className="hidden sm:inline">Закрыть</span>
             </button>
           </div>
         }
@@ -380,23 +388,23 @@ export default function ServerModal({
         </div>
 
         {}
-          <div className="flex items-center gap-3">
-            <label className="w-32 text-sm font-medium shrink-0" style={labelStyles}>
-              Статус
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.enabled === 1}
-                onChange={(e) => handleChange('enabled', e.target.checked ? 1 : 0)}
-                className="w-4 h-4 rounded"
-              />
-              <span className="text-sm" style={{ color: formData.enabled ? '#22d3ee' : '#f87171' }}>
-                {formData.enabled ? 'Включен' : 'Выключен'}
-              </span>
-            </label>
-          </div>
-        <div className="grid grid-cols-2 gap-6">
+        <div className="flex items-center gap-3">
+          <label className="w-32 text-sm font-medium shrink-0" style={labelStyles}>
+            Статус
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.enabled === 1}
+              onChange={(e) => handleChange('enabled', e.target.checked ? 1 : 0)}
+              className="w-4 h-4 rounded"
+            />
+            <span className="text-sm" style={{ color: formData.enabled ? '#22d3ee' : '#f87171' }}>
+              {formData.enabled ? 'Включен' : 'Выключен'}
+            </span>
+          </label>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div className="flex items-center gap-3">
             <label className="w-32 text-sm font-medium shrink-0" style={labelStyles}>
               Кол-во услуг
@@ -410,20 +418,20 @@ export default function ServerModal({
             />
           </div>
 
-            {}
-            <div className="flex items-center gap-3">
+          {}
+          <div className="flex items-center gap-3">
             <label className="w-32 text-sm font-medium shrink-0" style={labelStyles}>
-                Огр. кол-ва услуг
+              Огр. кол-ва услуг
             </label>
             <input
-                type="number"
-                value={formData.settings?.max_services || 0}
-                onChange={(e) => handleSettingsChange('max_services', Number(e.target.value))}
-                min="0"
-                className="flex-1 px-3 py-2 text-sm rounded border"
-                style={inputStyles}
+              type="number"
+              value={formData.settings?.max_services || 0}
+              onChange={(e) => handleSettingsChange('max_services', Number(e.target.value))}
+              min="0"
+              className="flex-1 px-3 py-2 text-sm rounded border"
+              style={inputStyles}
             />
-            </div>
+          </div>
         </div>
 
         {}

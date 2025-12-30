@@ -33,7 +33,7 @@ export default function ChangeServiceModal({
       } else {
         setSelectedServiceId(userServiceData?.next);
       }
-      
+
       setLoadingServices(true);
       shm_request('shm/v1/admin/service?limit=100')
         .then(res => {
@@ -89,7 +89,7 @@ export default function ChangeServiceModal({
 
   const currentService = services.find(s => s.service_id === userServiceData?.service_id);
   const selectedService = services.find(s => s.service_id === selectedServiceId);
-  
+
   const getNextServiceLabel = () => {
     if (!userServiceData?.next) return 'Не изменять';
     if (userServiceData.next === -1) return 'Удалить по истечению';
@@ -101,27 +101,29 @@ export default function ChangeServiceModal({
     <div className="flex justify-end gap-2 w-full">
       <button
         onClick={onClose}
-        className="px-4 py-2 rounded flex items-center gap-2"
+        className="p-2 rounded flex items-center gap-2"
         style={{
           backgroundColor: 'var(--theme-button-secondary-bg)',
           color: 'var(--theme-button-secondary-text)',
           border: '1px solid var(--theme-button-secondary-border)',
         }}
+        title="Отмена"
       >
         <X className="w-4 h-4" />
-        Отмена
+        <span className="hidden sm:inline">Отмена</span>
       </button>
       <button
         onClick={handleSave}
         disabled={saving || selectedServiceId === null || selectedServiceId === undefined}
-        className="px-4 py-2 rounded flex items-center gap-2 disabled:opacity-50 btn-success"
+        className="p-2 rounded flex items-center gap-2 disabled:opacity-50 btn-success"
         style={{
           backgroundColor: 'var(--accent-primary)',
           color: 'var(--accent-text)',
         }}
+        title="Сменить тариф"
       >
         <Save className="w-4 h-4" />
-        {saving ? 'Сохранение...' : 'Сменить тариф'}
+        <span className="hidden sm:inline">{saving ? 'Сохранение...' : 'Сменить тариф'}</span>
       </button>
     </div>
   );
@@ -227,7 +229,7 @@ export default function ChangeServiceModal({
               <option value="-1">Удалить по истечению</option>
               {services.map(s => (
                 <option key={s.service_id} value={s.service_id}>
-                  {s.name} (ID: {s.service_id})
+                  {s.name}
                 </option>
               ))}
             </select>

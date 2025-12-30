@@ -88,42 +88,45 @@ export default function ConfigModal({ open, onClose, data, onSave }: ConfigModal
         <button
           onClick={() => setConfirmDeleteOpen(true)}
           disabled={saving || deleting}
-          className="px-4 py-2 rounded flex items-center gap-2 btn-danger disabled:opacity-50"
+          className="p-2 rounded flex items-center gap-2 btn-danger disabled:opacity-50"
           style={{
             backgroundColor: 'var(--theme-button-danger-bg)',
             color: 'var(--theme-button-danger-text)',
             border: '1px solid var(--theme-button-danger-border)',
           }}
+          title="Удалить"
         >
           <Trash2 className="w-4 h-4" />
-          Удалить
+          <span className="hidden sm:inline">Удалить</span>
         </button>
       </div>
       <div className="flex gap-2">
         <button
           onClick={handleCancel}
           disabled={saving || deleting}
-          className="px-4 py-2 rounded flex items-center gap-2 disabled:opacity-50"
+          className="p-2 rounded flex items-center gap-2 disabled:opacity-50"
           style={{
             backgroundColor: 'var(--theme-button-secondary-bg)',
             color: 'var(--theme-button-secondary-text)',
             border: '1px solid var(--theme-button-secondary-border)',
           }}
+          title="Отмена"
         >
           <X className="w-4 h-4" />
-          Отмена
+          <span className="hidden sm:inline">Отмена</span>
         </button>
         <button
           onClick={handleSubmit}
           disabled={saving || deleting}
-          className="px-4 py-2 rounded flex items-center gap-2 disabled:opacity-50 btn-success"
+          className="p-2 rounded flex items-center gap-2 disabled:opacity-50 btn-success"
           style={{
             backgroundColor: 'var(--accent-primary)',
             color: 'var(--accent-text)',
           }}
+          title="Сохранить"
         >
           <Save className="w-4 h-4" />
-          {saving ? 'Сохранение...' : 'Сохранить'}
+          <span className="hidden sm:inline">{saving ? 'Сохранение...' : 'Сохранить'}</span>
         </button>
       </div>
     </div>

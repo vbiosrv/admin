@@ -72,12 +72,12 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({ op
           const overriddenData: any = {};
           Object.keys(cloneData).forEach(fieldKey => {
             if (fieldKey === 'paysystem') return;
-            
+
             if (JSON.stringify(cloneData[fieldKey]) !== JSON.stringify(baseData[fieldKey])) {
               overriddenData[fieldKey] = cloneData[fieldKey];
             }
           });
-          
+
           foundClones.push({
             key,
             name: `${system.title} (копия ${index})`,
@@ -122,9 +122,9 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({ op
       });
 
       toast.success(`Настройки ${isClone ? 'копии ' : ''}${system.title} сохранены`);
-      
+
       await loadExistingData();
-      
+
       if (isClone) {
         setShowCloneForm(false);
         setOverrideFields([]);
@@ -153,7 +153,7 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({ op
       const cloneKey = `${system.name}_${newIndex}`;
 
       const finalData: Record<string, any> = { paysystem: system.name };
-      
+
       overrideFields.forEach(field => {
         if (formData[field] !== undefined) {
           finalData[field] = formData[field];
@@ -197,8 +197,8 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({ op
     if (requiredCloneFields.includes(fieldName)) {
       return;
     }
-    setOverrideFields(prev => 
-      prev.includes(fieldName) 
+    setOverrideFields(prev =>
+      prev.includes(fieldName)
         ? prev.filter(f => f !== fieldName)
         : [...prev, fieldName]
     );
@@ -314,7 +314,7 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({ op
         </div>
 
         {/* Tabs */}
-        {system.paid && (
+        {(system.paid || system.price === 0) && (
           <div className="flex border-b" style={{ borderColor: 'var(--theme-card-border)' }}>
             <button
               onClick={() => setActiveTab('main')}
@@ -428,7 +428,7 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({ op
                     // Поля, которые можно добавить (которых еще нет в копии)
                     const availableFieldsToAdd = system.fields.filter(f => !cloneFieldNames.includes(f.name));
                     const isAddingFields = addingFieldsToClone === clone.key;
-                    
+
                     return (
                       <div
                         key={clone.key}
@@ -493,7 +493,7 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({ op
                                 </label>
                               ))}
                             </div>
-                            
+
                             {newFieldsToAdd.length > 0 && (
                               <DynamicPaymentForm
                                 schema={{
@@ -504,17 +504,17 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({ op
                                 existingData={existingData}
                                 onSubmit={(data) => {
                                   // Объединяем существующие поля копии с новыми
-                                  const updatedCloneData: Record<string, any> = { 
+                                  const updatedCloneData: Record<string, any> = {
                                     ...clone.fullData,
-                                    paysystem: system.name 
+                                    paysystem: system.name
                                   };
-                                  
+
                                   newFieldsToAdd.forEach(fieldName => {
                                     if (data[fieldName] !== undefined) {
                                       updatedCloneData[fieldName] = data[fieldName];
                                     }
                                   });
-                                  
+
                                   handleFormSubmit(updatedCloneData, true, clone.key);
                                   setAddingFieldsToClone(null);
                                   setNewFieldsToAdd([]);
@@ -525,7 +525,7 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({ op
                                 }}
                               />
                             )}
-                            
+
                             {newFieldsToAdd.length === 0 && (
                               <button
                                 onClick={() => {
@@ -543,7 +543,7 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({ op
                             )}
                           </div>
                         )}
-                        
+
                         {fieldsToShow.length > 0 ? (
                           <DynamicPaymentForm
                             schema={{
@@ -555,13 +555,13 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({ op
                             onSubmit={(data) => {
                               // Сохраняем только те поля что в форме + paysystem
                               const updatedCloneData: Record<string, any> = { paysystem: system.name };
-                              
+
                               fieldsToShow.forEach(field => {
                                 if (data[field.name] !== undefined) {
                                   updatedCloneData[field.name] = data[field.name];
                                 }
                               });
-                              
+
                               handleFormSubmit(updatedCloneData, true, clone.key);
                             }}
                             onCancel={() => {}}
