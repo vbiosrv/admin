@@ -17,7 +17,7 @@ RUN apk add --no-cache nginx wget
 
 EXPOSE 80
 
-COPY nginx.conf /etc/nginx/http.d/default.conf
+COPY nginx.conf.template /etc/nginx/nginx.conf.template
 
 COPY swagger/index.html /swagger/index.html
 

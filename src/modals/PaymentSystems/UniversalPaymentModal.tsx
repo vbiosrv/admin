@@ -137,9 +137,13 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({ op
     }
   };
 
+  // Обязательные поля для копии (всегда должны быть выбраны)
+  const requiredCloneFields = ['name', 'show_for_client'];
+
   const handleCreateClone = () => {
     setShowCloneForm(true);
-    setOverrideFields([]);
+    // Автоматически выбираем обязательные поля
+    setOverrideFields([...requiredCloneFields]);
   };
 
   const handleSaveClone = async (formData: Record<string, any>) => {
@@ -189,6 +193,10 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({ op
   };
 
   const handleFieldToggle = (fieldName: string) => {
+    // Не даём отключить обязательные поля
+    if (requiredCloneFields.includes(fieldName)) {
+      return;
+    }
     setOverrideFields(prev => 
       prev.includes(fieldName) 
         ? prev.filter(f => f !== fieldName)

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+cp /etc/nginx/nginx.conf.template /etc/nginx/http.d/default.conf
+
 [ -z "$SHM_URL" ] || sed -i "s|http://shm.local|$SHM_URL|g" /etc/nginx/http.d/default.conf
 [ -z "$SHM_HOST" ] || sed -i "s|http://shm.local|$SHM_HOST|g" /etc/nginx/http.d/default.conf
 [ -z "$RESOLVER" ] || sed -i "s|resolver 127.0.0.11|resolver $RESOLVER|g" /etc/nginx/http.d/default.conf

@@ -8,6 +8,6 @@ services:
     environment:
       SHM_HOST: https://shm.bkcloud.ru
       VITE_SHOW_SWAGGER: "true"
-      SHM_BASE_PATH: /web
+      SHM_BASE_PATH: /
     ports:
       - "8080:80"
