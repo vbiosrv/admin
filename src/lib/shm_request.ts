@@ -15,7 +15,9 @@ export async function shm_request<T = any>(url: string, options?: RequestInit): 
 
   if (response.status === 401) {
     useAuthStore.getState().logout();
-    window.location.href = '/login';
+    const baseHref = document.querySelector('base')?.getAttribute('href') || '/';
+    const basePath = baseHref.endsWith('/') ? baseHref.slice(0, -1) : baseHref;
+    window.location.href = `${basePath}/login`;
     throw new Error('Unauthorized');
   }
 

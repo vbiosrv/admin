@@ -32,7 +32,7 @@ import NotFound from './pages/NotFound';
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
   if (!isAuthenticated) {
-    return <Navigate to="login" replace />;
+    return <Navigate to="/login" replace />;
   }
   return <>{children}</>;
 }
@@ -56,7 +56,8 @@ function App() {
     return () => document.removeEventListener('click', handleToastClick);
   }, []);
 
-  const basename = document.querySelector('base')?.getAttribute('href') || '/';
+  const baseHref = document.querySelector('base')?.getAttribute('href') || '/';
+  const basename = baseHref.endsWith('/') ? baseHref.slice(0, -1) : baseHref;
 
   return (
     <BrowserRouter basename={basename}>
