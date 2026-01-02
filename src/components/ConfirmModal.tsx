@@ -96,7 +96,7 @@ export default function ConfirmModal({
         className="px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         style={{
           backgroundColor: variant === 'danger' ? '#dc2626' : 'var(--accent-primary)',
-          color: 'white',
+          color: 'var(--button-primary-text)',
         }}
       >
         {loading ? 'Загрузка...' : confirmText}

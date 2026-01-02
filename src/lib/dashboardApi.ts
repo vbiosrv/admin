@@ -4,14 +4,10 @@ export interface DashboardAnalytics {
   counts: {
     totalUsers: number;
     activeUserServices: number;
+    totalRevenue: number;
   };
   payments: {
     timeline: { date: string; value: number; label?: string }[];
-  };
-  revenue: {
-    totalRevenue: number;
-    totalWithdraws: number;
-    netRevenue: number;
   };
   services: {
     byStatus: { name: string; value: number; color?: string }[];
@@ -63,7 +59,6 @@ export async function fetchDashboardAnalytics(period: number = 7): Promise<Dashb
 
     // Подсчеты
     const totalRevenue = realPayments.reduce((sum: number, p: any) => sum + parseFloat(p.money || 0), 0);
-    const totalWithdraws = withdraws.reduce((sum: number, w: any) => sum + parseFloat(w.total || 0), 0);
     const activeUserServices = userServicesNew.filter((us: any) => us.status === 'ACTIVE').length;
 
     // Группировка платежей по датам
@@ -83,14 +78,10 @@ export async function fetchDashboardAnalytics(period: number = 7): Promise<Dashb
       counts: {
         totalUsers: totalUsersCount,
         activeUserServices: activeUserServices,
+        totalRevenue: totalRevenue,
       },
       payments: {
         timeline: Object.entries(paymentsByDate).map(([date, value]) => ({ date, value })),
-      },
-      revenue: {
-        totalRevenue,
-        totalWithdraws,
-        netRevenue: totalRevenue - totalWithdraws,
       },
       services: {
         byStatus: Object.entries(servicesByStatus).map(([name, value]) => ({ name, value })),
@@ -101,69 +92,4 @@ export async function fetchDashboardAnalytics(period: number = 7): Promise<Dashb
   } catch (error) {
     throw error;
   }
-}
-
-interface PeriodData {
-  items?: number;
-  registered?: number;
-  last_login?: number;
-  amount?: number;
-  delta?: number;
-  percent?: string;
-  [key: string]: any;
-}
-
-export interface AnalyticsStats {
-  users: {
-    items: number;
-    blocked: number;
-    day_7?: PeriodData;
-    month?: PeriodData;
-    month_3?: PeriodData;
-    year?: PeriodData;
-    all?: PeriodData;
-  };
-  pays: {
-    items: number;
-    total_sum: number;
-    day_7?: PeriodData;
-    month?: PeriodData;
-    month_3?: PeriodData;
-    year?: PeriodData;
-    all?: PeriodData;
-  };
-  bonus: {
-    items: number;
-    total_sum: number;
-    day_7?: PeriodData;
-    month?: PeriodData;
-    month_3?: PeriodData;
-    year?: PeriodData;
-    all?: PeriodData;
-  };
-  withdraws: {
-    items: number;
-    total_sum: number;
-    day_7?: PeriodData;
-    month?: PeriodData;
-    month_3?: PeriodData;
-    year?: PeriodData;
-    all?: PeriodData;
-  };
-  user_services: {
-    items: number;
-    day_7?: PeriodData;
-    month?: PeriodData;
-    month_3?: PeriodData;
-    year?: PeriodData;
-    all?: PeriodData;
-  };
-}
-
-export async function fetchAnalyticsStats(): Promise<AnalyticsStats> {
-  const response = await shm_request('shm/v1/admin/analytics');
-  if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-    return response.data[0] as AnalyticsStats;
-  }
-  return response.data as AnalyticsStats;
 }
