@@ -11,7 +11,7 @@ COPY . .
 
 RUN npm run build
 
-FROM nginx:stable-alpine AS shm-admin-2
+FROM nginx:stable-alpine AS admin
 
 WORKDIR /app
 ENTRYPOINT ["/entry.sh"]
