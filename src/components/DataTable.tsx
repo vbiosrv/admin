@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { 
-  RefreshCw, 
-  X, 
-  Columns, 
-  GripVertical, 
-  ChevronLeft, 
+import {
+  RefreshCw,
+  X,
+  Columns,
+  GripVertical,
+  ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
@@ -98,14 +98,14 @@ function formatCellValue(value: any): React.ReactNode {
   return String(value);
 }
 
-function DataTable({ 
-  columns: initialColumns, 
-  data, 
-  loading, 
-  total = 0, 
-  limit, 
-  offset, 
-  onPageChange, 
+function DataTable({
+  columns: initialColumns,
+  data,
+  loading,
+  total = 0,
+  limit,
+  offset,
+  onPageChange,
   onRowClick,
   onRefresh,
   onSort,
@@ -117,21 +117,21 @@ function DataTable({
 }: DataTableProps) {
   const displayData = data;
   const [filters, setFilters] = useState<Record<string, string>>({});
-  
+
   const [columns, setColumns] = useState<Column[]>(() => {
-    const defaultColumns = initialColumns.map(col => ({ 
-      ...col, 
-      width: col.width || DEFAULT_COLUMN_WIDTH 
+    const defaultColumns = initialColumns.map(col => ({
+      ...col,
+      width: col.width || DEFAULT_COLUMN_WIDTH
     }));
-    
+
     if (!storageKey) return defaultColumns;
-    
+
     const stored = loadSettings(storageKey);
     if (!stored) return defaultColumns;
-    
+
     const storedMap = new Map(stored.columns.map(c => [c.key, c]));
     const result: Column[] = [];
-    
+
     for (const storedCol of stored.columns) {
       const initialCol = defaultColumns.find(c => c.key === storedCol.key);
       if (initialCol) {
@@ -142,52 +142,62 @@ function DataTable({
         });
       }
     }
-    
+
     for (const col of defaultColumns) {
       if (!storedMap.has(col.key)) {
         result.push(col);
       }
     }
-    
+
     return result;
   });
-  
-  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>(() => {
+    return externalFilters ? { ...externalFilters } : {};
+  });
   const [showColumns, setShowColumns] = useState(false);
   const [draggedColumn, setDraggedColumn] = useState<string | null>(null);
   const [resizingColumn, setResizingColumn] = useState<string | null>(null);
-  
+
   const [autoRefresh, setAutoRefresh] = useState(() => {
     if (!storageKey) return 0;
     const stored = loadSettings(storageKey);
     return stored?.autoRefresh ?? 0;
   });
-  
+
   const [showAutoRefreshMenu, setShowAutoRefreshMenu] = useState(false);
-  
+
   const tableRef = useRef<HTMLDivElement>(null);
   const columnsDropdownRef = useRef<HTMLDivElement>(null);
   const autoRefreshRef = useRef<HTMLDivElement>(null);
   const isInitialMount = useRef(true);
-  const isFirstLoad = useRef(true); 
-  const filterTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null); 
-  const onRefreshRef = useRef(onRefresh); 
-  const prevFormattedFiltersRef = useRef<string>(''); 
+  const isFirstLoad = useRef(true);
+  const filterTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onRefreshRef = useRef(onRefresh);
+  const prevFormattedFiltersRef = useRef<string>((() => {
+    if (externalFilters) {
+      const formattedFilters: Record<string, string> = {};
+      Object.entries(externalFilters).forEach(([key, value]) => {
+        if (value) {
+          formattedFilters[key] = `%${value}%`;
+        }
+      });
+      return JSON.stringify(formattedFilters);
+    }
+    return '';
+  })());
+  const isFilterInitialized = useRef(false);
 
   useEffect(() => {
     onRefreshRef.current = onRefresh;
   }, [onRefresh]);
 
-  // Инициализируем фильтры из externalFilters только один раз
   useEffect(() => {
     if (externalFilters) {
       setColumnFilters(prev => {
         const newFilters = { ...prev };
-        // Добавляем externalFilters только если соответствующий фильтр еще не установлен
         Object.entries(externalFilters).forEach(([key, value]) => {
-          if (prev[key] === undefined) {
-            newFilters[key] = value;
-          }
+          newFilters[key] = value;
         });
         return newFilters;
       });
@@ -196,11 +206,23 @@ function DataTable({
 
   useEffect(() => {
     if (!onFilterChange) return;
-    
+
     if (filterTimeoutRef.current) {
       clearTimeout(filterTimeoutRef.current);
     }
-    
+
+    if (!isFilterInitialized.current) {
+      isFilterInitialized.current = true;
+      const formattedFilters: Record<string, string> = {};
+      Object.entries(columnFilters).forEach(([key, value]) => {
+        if (value) {
+          formattedFilters[key] = `%${value}%`;
+        }
+      });
+      prevFormattedFiltersRef.current = JSON.stringify(formattedFilters);
+      return;
+    }
+
     filterTimeoutRef.current = setTimeout(() => {
       const formattedFilters: Record<string, string> = {};
       Object.entries(columnFilters).forEach(([key, value]) => {
@@ -208,14 +230,14 @@ function DataTable({
           formattedFilters[key] = `%${value}%`;
         }
       });
-      
+
       const filtersString = JSON.stringify(formattedFilters);
       if (filtersString !== prevFormattedFiltersRef.current) {
         prevFormattedFiltersRef.current = filtersString;
         onFilterChange(formattedFilters);
       }
     }, 1000);
-    
+
     return () => {
       if (filterTimeoutRef.current) {
         clearTimeout(filterTimeoutRef.current);
@@ -234,9 +256,9 @@ function DataTable({
       isInitialMount.current = false;
       return;
     }
-    
+
     if (!storageKey) return;
-    
+
     const settings: StoredSettings = {
       columns: columns.map(col => ({
         key: col.key,
@@ -245,7 +267,7 @@ function DataTable({
       })),
       autoRefresh,
     };
-    
+
     saveSettings(storageKey, settings);
   }, [columns, autoRefresh, storageKey]);
 
@@ -275,7 +297,7 @@ function DataTable({
 
   const resizingRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
   const wasResizingRef = useRef(false);
-  
+
   const handleResizeStart = useCallback((e: React.MouseEvent, key: string, currentWidth: number) => {
     e.preventDefault();
     e.stopPropagation();
@@ -288,11 +310,11 @@ function DataTable({
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!resizingRef.current) return;
-      
+
       const { key, startX, startWidth } = resizingRef.current;
       const diff = e.clientX - startX;
       const newWidth = Math.max(MIN_COLUMN_WIDTH, startWidth + diff);
-      
+
       const cells = document.querySelectorAll(`[data-column-key="${key}"]`);
       cells.forEach(cell => {
         (cell as HTMLElement).style.width = `${newWidth}px`;
@@ -303,18 +325,18 @@ function DataTable({
 
     const handleMouseUp = (e: MouseEvent) => {
       if (!resizingRef.current) return;
-      
+
       const { key, startX, startWidth } = resizingRef.current;
       const diff = e.clientX - startX;
       const newWidth = Math.max(MIN_COLUMN_WIDTH, startWidth + diff);
-      
+
       setColumns(cols => cols.map(col =>
         col.key === key ? { ...col, width: newWidth } : col
       ));
-      
+
       resizingRef.current = null;
       setResizingColumn(null);
-      
+
       wasResizingRef.current = true;
       setTimeout(() => {
         wasResizingRef.current = false;
@@ -332,9 +354,9 @@ function DataTable({
   const handleSortClick = useCallback((col: Column) => {
     if (wasResizingRef.current) return;
     if (col.sortable === false || !onSort) return;
-    
-    const newDirection: SortDirection = 
-      sortField === col.key 
+
+    const newDirection: SortDirection =
+      sortField === col.key
         ? (sortDirection === 'asc' ? 'desc' : sortDirection === 'desc' ? null : 'asc')
         : 'asc';
     onSort(col.key, newDirection);
@@ -392,24 +414,24 @@ function DataTable({
   const visibleColumns = columns.filter(col => col.visible);
 
   return (
-    <div 
+    <div
       className="rounded-lg overflow-hidden flex flex-col"
-      style={{ 
+      style={{
         backgroundColor: 'var(--theme-card-bg)',
         border: '1px solid var(--theme-card-border)',
         height: '100%',
       }}
     >
       {}
-      <div 
+      <div
         className="px-4 py-3 flex flex-wrap gap-3 items-center justify-between"
         style={{ borderBottom: '1px solid var(--theme-card-border)' }}
       >
         <div className="flex gap-2 items-center">
           {hasActiveFilters && (
-            <span 
+            <span
               className="text-xs px-2 py-1 rounded-full"
-              style={{ 
+              style={{
                 backgroundColor: 'var(--theme-primary-color)',
                 color: 'white',
               }}
@@ -421,7 +443,7 @@ function DataTable({
 
         <div className="flex gap-2 items-center">
           {}
-          <button 
+          <button
             onClick={clearAllFilters}
             className="btn-icon"
             title="Очистить фильтры"
@@ -433,7 +455,7 @@ function DataTable({
 
           {}
           {onRefresh && (
-            <button 
+            <button
               onClick={onRefresh}
               className="btn-icon"
               title="Обновить"
@@ -446,11 +468,11 @@ function DataTable({
           {}
           {onRefresh && (
             <div className="relative" ref={autoRefreshRef}>
-              <button 
+              <button
                 onClick={() => setShowAutoRefreshMenu(!showAutoRefreshMenu)}
                 className="btn-icon flex items-center gap-1"
                 title="Автообновление"
-                style={{ 
+                style={{
                   color: autoRefresh > 0 ? 'var(--accent-primary)' : undefined,
                 }}
               >
@@ -460,7 +482,7 @@ function DataTable({
               </button>
 
               {showAutoRefreshMenu && (
-                <div 
+                <div
                   className="absolute right-0 top-full mt-1 z-50 py-1 rounded-lg shadow-xl overflow-hidden min-w-[100px]"
                   style={{
                     backgroundColor: 'var(--theme-card-bg)',
@@ -488,7 +510,7 @@ function DataTable({
 
           {}
           <div className="relative" ref={columnsDropdownRef}>
-            <button 
+            <button
               onClick={() => setShowColumns(!showColumns)}
               className="btn-icon"
               title="Управление столбцами"
@@ -497,16 +519,16 @@ function DataTable({
             </button>
 
             {showColumns && (
-              <div 
+              <div
                 className="absolute right-0 top-full mt-2 z-50 w-64 rounded-lg shadow-xl overflow-hidden"
                 style={{
                   backgroundColor: 'var(--theme-card-bg)',
                   border: '1px solid var(--theme-card-border)',
                 }}
               >
-                <div 
+                <div
                   className="px-3 py-2 font-medium text-sm"
-                  style={{ 
+                  style={{
                     borderBottom: '1px solid var(--theme-card-border)',
                     color: 'var(--theme-content-text)',
                   }}
@@ -515,8 +537,8 @@ function DataTable({
                 </div>
                 <div className="max-h-64 overflow-y-auto p-2">
                   {columns.map(col => (
-                    <label 
-                      key={col.key} 
+                    <label
+                      key={col.key}
                       className="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors"
                       style={{
                         color: 'var(--theme-content-text)',
@@ -546,15 +568,15 @@ function DataTable({
       </div>
 
       {}
-      <div 
+      <div
         ref={tableRef}
         className="overflow-auto flex-1"
-        style={{ 
+        style={{
           backgroundColor: 'var(--theme-table-bg)',
         }}
       >
         <table className="w-full" style={{ minWidth: 'max-content' }}>
-          <thead 
+          <thead
             className="sticky top-0 z-10"
             style={{ backgroundColor: 'var(--theme-header-bg)' }}
           >
@@ -563,7 +585,7 @@ function DataTable({
               {visibleColumns.map(col => {
                 const isSorted = sortField === col.key;
                 const canSort = col.sortable !== false && onSort;
-                
+
                 return (
                   <th
                     key={col.key}
@@ -586,12 +608,12 @@ function DataTable({
                     onClick={() => handleSortClick(col)}
                   >
                     <div className="flex items-center gap-2">
-                      <GripVertical 
-                        className="w-3 h-3 opacity-30 group-hover:opacity-70 flex-shrink-0" 
+                      <GripVertical
+                        className="w-3 h-3 opacity-30 group-hover:opacity-70 flex-shrink-0"
                         onMouseDown={e => e.stopPropagation()}
                       />
                       <span className="flex-grow">{col.label}</span>
-                      
+
                       {}
                       {canSort && (
                         <span className="flex-shrink-0 ml-1">
@@ -607,7 +629,7 @@ function DataTable({
                         </span>
                       )}
                     </div>
-                    
+
                     {}
                     <div
                       className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-cyan-500/50"
@@ -623,7 +645,7 @@ function DataTable({
                 );
               })}
             </tr>
-            
+
             {}
             <tr style={{ backgroundColor: 'var(--theme-card-bg)' }}>
               {visibleColumns.map(col => (
@@ -660,8 +682,8 @@ function DataTable({
                           </option>
                         ))}
                       </select>
-                      <ChevronDown 
-                        className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none" 
+                      <ChevronDown
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none"
                         style={{ color: 'var(--theme-content-text-muted)' }}
                       />
                       {columnFilters[col.key] && (
@@ -675,8 +697,8 @@ function DataTable({
                     </div>
                   ) : (
                     <div className="relative">
-                      <Search 
-                        className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3" 
+                      <Search
+                        className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3"
                         style={{ color: 'var(--theme-content-text-muted)' }}
                       />
                       <input
@@ -708,12 +730,12 @@ function DataTable({
               ))}
             </tr>
           </thead>
-          
+
           <tbody>
             {loading && isFirstLoad.current ? (
               <tr>
-                <td 
-                  colSpan={visibleColumns.length} 
+                <td
+                  colSpan={visibleColumns.length}
                   className="text-center p-8"
                   style={{ color: 'var(--theme-content-text-muted)' }}
                 >
@@ -725,8 +747,8 @@ function DataTable({
               </tr>
             ) : displayData.length === 0 ? (
               <tr>
-                <td 
-                  colSpan={visibleColumns.length} 
+                <td
+                  colSpan={visibleColumns.length}
                   className="text-center p-8"
                   style={{ color: 'var(--theme-content-text-muted)' }}
                 >
@@ -738,8 +760,8 @@ function DataTable({
               </tr>
             ) : (
               displayData.map((row, idx) => (
-                <tr 
-                  key={idx} 
+                <tr
+                  key={idx}
                   className={`${onRowClick ? 'cursor-pointer' : ''}`}
                   style={{
                     borderBottom: '1px solid var(--theme-table-border)',
@@ -754,7 +776,7 @@ function DataTable({
                   }}
                 >
                   {visibleColumns.map(col => (
-                    <td 
+                    <td
                       key={col.key}
                       data-column-key={col.key}
                       className="px-4 py-2 text-sm"
@@ -779,9 +801,9 @@ function DataTable({
       </div>
 
       {}
-      <div 
+      <div
         className="px-4 py-3 flex flex-wrap gap-3 items-center justify-between text-sm"
-        style={{ 
+        style={{
           borderTop: '1px solid var(--theme-card-border)',
           backgroundColor: 'var(--theme-card-bg)',
         }}
@@ -791,7 +813,7 @@ function DataTable({
             Всего: <strong style={{ color: 'var(--theme-content-text)' }}>{total}</strong>
             {' '} | Показано: <strong style={{ color: 'var(--theme-content-text)' }}>{data.length}</strong>
           </div>
-          
+
           <div className="flex gap-2 items-center">
             <span style={{ color: 'var(--theme-content-text-muted)' }}>
               Показывать:
@@ -807,7 +829,7 @@ function DataTable({
             </select>
           </div>
         </div>
-        
+
         <div className="flex gap-1 items-center">
           <button
             className="btn-icon"
@@ -825,7 +847,7 @@ function DataTable({
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          
+
           <div className="flex gap-1 px-2">
             {}
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -839,7 +861,7 @@ function DataTable({
               } else {
                 pageNum = currentPage - 2 + i;
               }
-              
+
               return (
                 <button
                   key={pageNum}
@@ -855,7 +877,7 @@ function DataTable({
               );
             })}
           </div>
-          
+
           <button
             className="btn-icon"
             disabled={currentPage >= totalPages}

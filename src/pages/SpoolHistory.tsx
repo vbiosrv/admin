@@ -43,6 +43,8 @@ const spoolHistoryColumns = [
 ];
 
 function SpoolHistory() {
+  const { selectedUser } = useSelectedUserStore();
+
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
@@ -52,9 +54,12 @@ function SpoolHistory() {
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [selectedRow, setSelectedRow] = useState<any>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [filters, setFilters] = useState<Record<string, string>>({});
-
-    const { selectedUser } = useSelectedUserStore();
+  const [filters, setFilters] = useState<Record<string, string>>(() => {
+    if (selectedUser?.user_id) {
+      return { user_id: `%${selectedUser.user_id}%` };
+    }
+    return {} as Record<string, string>;
+  });
 
     const externalFilters = useMemo(() => {
       if (selectedUser?.user_id) {
@@ -73,7 +78,7 @@ function SpoolHistory() {
         activeFilters[key] = value;
       }
     });
-    
+
     if (Object.keys(activeFilters).length > 0) {
       url += `&filter=${encodeURIComponent(JSON.stringify(activeFilters))}`;
     }
@@ -93,7 +98,7 @@ function SpoolHistory() {
 
   useEffect(() => {
     fetchData(limit, offset, filters, sortField, sortDirection);
-  }, [limit, offset, filters, sortField, sortDirection, fetchData]);
+  }, [limit, offset, filters, sortField, sortDirection]);
 
   const handlePageChange = (newLimit: number, newOffset: number) => {
     setLimit(newLimit);

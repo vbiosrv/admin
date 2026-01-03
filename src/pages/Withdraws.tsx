@@ -22,6 +22,8 @@ const withdrawColumns = [
 ];
 
 function Withdraws() {
+  const { selectedUser } = useSelectedUserStore();
+
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
@@ -29,11 +31,14 @@ function Withdraws() {
   const [offset, setOffset] = useState(0);
   const [sortField, setSortField] = useState<string | undefined>();
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
-  const [filters, setFilters] = useState<Record<string, string>>({});
+  const [filters, setFilters] = useState<Record<string, string>>(() => {
+    if (selectedUser?.user_id) {
+      return { user_id: `%${selectedUser.user_id}%` };
+    }
+    return {} as Record<string, string>;
+  });
   const [selectedRow, setSelectedRow] = useState<any>(null);
   const [modalOpen, setModalOpen] = useState(false);
-
-  const { selectedUser } = useSelectedUserStore();
 
   const externalFilters = useMemo(() => {
     if (selectedUser?.user_id) {
@@ -52,7 +57,7 @@ function Withdraws() {
         activeFilters[key] = value;
       }
     });
-    
+
     if (Object.keys(activeFilters).length > 0) {
       url += `&filter=${encodeURIComponent(JSON.stringify(activeFilters))}`;
     }
@@ -72,7 +77,7 @@ function Withdraws() {
 
   useEffect(() => {
     fetchData(limit, offset, filters, sortField, sortDirection);
-  }, [limit, offset, filters, sortField, sortDirection, fetchData]);
+  }, [limit, offset, filters, sortField, sortDirection]);
 
   const handlePageChange = (newLimit: number, newOffset: number) => {
     setLimit(newLimit);

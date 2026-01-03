@@ -134,7 +134,10 @@ function DataTableTree({
   maxDeepLevel = 10,
 }: DataTableTreeProps) {
   const [treeNodes, setTreeNodes] = useState<TreeNode[]>([]);
-  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>(() => {
+    // Инициализируем сразу с externalFilters если они есть
+    return externalFilters ? { ...externalFilters } : {};
+  });
 
   const [columns, setColumns] = useState<Column[]>(() => {
     const defaultColumns = initialColumns.map(col => ({
@@ -188,9 +191,20 @@ function DataTableTree({
   const isInitialMount = useRef(true);
   const filterTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onRefreshRef = useRef(onRefresh);
-  const prevFormattedFiltersRef = useRef<string>('');
+  const prevFormattedFiltersRef = useRef<string>((() => {
+    if (externalFilters) {
+      const formattedFilters: Record<string, string> = {};
+      Object.entries(externalFilters).forEach(([key, value]) => {
+        if (value) {
+          formattedFilters[key] = `%${value}%`;
+        }
+      });
+      return JSON.stringify(formattedFilters);
+    }
+    return '';
+  })());
+  const isFilterInitialized = useRef(false);
 
-  // Преобразование плоского списка в дерево
   useEffect(() => {
     const nodes: TreeNode[] = data.map(row => ({
       row,
@@ -207,16 +221,12 @@ function DataTableTree({
     onRefreshRef.current = onRefresh;
   }, [onRefresh]);
 
-  // Инициализируем фильтры из externalFilters только один раз
   useEffect(() => {
     if (externalFilters) {
       setColumnFilters(prev => {
         const newFilters = { ...prev };
-        // Добавляем externalFilters только если соответствующий фильтр еще не установлен
         Object.entries(externalFilters).forEach(([key, value]) => {
-          if (prev[key] === undefined) {
-            newFilters[key] = value;
-          }
+          newFilters[key] = value;
         });
         return newFilters;
       });
@@ -228,6 +238,18 @@ function DataTableTree({
 
     if (filterTimeoutRef.current) {
       clearTimeout(filterTimeoutRef.current);
+    }
+
+    if (!isFilterInitialized.current) {
+      isFilterInitialized.current = true;
+      const formattedFilters: Record<string, string> = {};
+      Object.entries(columnFilters).forEach(([key, value]) => {
+        if (value) {
+          formattedFilters[key] = `%${value}%`;
+        }
+      });
+      prevFormattedFiltersRef.current = JSON.stringify(formattedFilters);
+      return;
     }
 
     filterTimeoutRef.current = setTimeout(() => {
