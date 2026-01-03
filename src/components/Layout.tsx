@@ -200,22 +200,73 @@ function Layout() {
     fetchBranding();
     applyTheme();
     
-    // Загрузка версии из GitHub tags
-    fetch('https://api.github.com/repos/danuk/shm/tags')
-      .then(res => res.json())
-      .then(data => {
-        const validTags = data.filter((tag: any) => tag.name !== 'delete');
-        if (validTags.length > 0) {
-          setVersion(validTags[0].name);
-        }
-      })
-      .catch(() => setVersion('unknown'));
-    
-    // Загрузка звезд с GitHub
-    fetch('https://api.github.com/repos/danuk/shm')
-      .then(res => res.json())
-      .then(data => setStars(data.stargazers_count))
-      .catch(() => setStars(null));
+    // Кеш на 1 час (3600000 мс)
+    const CACHE_TTL = 3600000;
+    const CACHE_KEY_VERSION = 'github_shm_version';
+    const CACHE_KEY_STARS = 'github_shm_stars';
+    const CACHE_KEY_TIMESTAMP = 'github_shm_timestamp';
+
+    const getCachedData = (key: string) => {
+      try {
+        return localStorage.getItem(key);
+      } catch {
+        return null;
+      }
+    };
+
+    const setCachedData = (key: string, value: string) => {
+      try {
+        localStorage.setItem(key, value);
+      } catch {
+        // Игнорируем ошибки localStorage
+      }
+    };
+
+    const isCacheValid = () => {
+      const timestamp = getCachedData(CACHE_KEY_TIMESTAMP);
+      if (!timestamp) return false;
+      const age = Date.now() - parseInt(timestamp, 10);
+      return age < CACHE_TTL;
+    };
+
+    // Проверяем кеш
+    if (isCacheValid()) {
+      const cachedVersion = getCachedData(CACHE_KEY_VERSION);
+      const cachedStars = getCachedData(CACHE_KEY_STARS);
+      
+      if (cachedVersion) setVersion(cachedVersion);
+      if (cachedStars) setStars(parseInt(cachedStars, 10));
+    } else {
+      // Загрузка версии из GitHub tags
+      fetch('https://api.github.com/repos/danuk/shm/tags')
+        .then(res => res.json())
+        .then(data => {
+          const validTags = data.filter((tag: any) => tag.name !== 'delete');
+          if (validTags.length > 0) {
+            const newVersion = validTags[0].name;
+            setVersion(newVersion);
+            setCachedData(CACHE_KEY_VERSION, newVersion);
+            setCachedData(CACHE_KEY_TIMESTAMP, Date.now().toString());
+          }
+        })
+        .catch(() => {
+          const cachedVersion = getCachedData(CACHE_KEY_VERSION);
+          setVersion(cachedVersion || 'unknown');
+        });
+      
+      // Загрузка звезд с GitHub
+      fetch('https://api.github.com/repos/danuk/shm')
+        .then(res => res.json())
+        .then(data => {
+          const newStars = data.stargazers_count;
+          setStars(newStars);
+          setCachedData(CACHE_KEY_STARS, newStars.toString());
+        })
+        .catch(() => {
+          const cachedStars = getCachedData(CACHE_KEY_STARS);
+          setStars(cachedStars ? parseInt(cachedStars, 10) : null);
+        });
+    }
     
     const handleOpenTemplate = (event: any) => {
       setSelectedData(event.detail);
@@ -528,6 +579,18 @@ function Layout() {
               );
             })}
           </nav>
+            <a
+              href="https://myshm.ru"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2 py-2"
+              style={{
+                color: 'var(--theme-primary-color)'
+              }}
+              title="Telegram"
+            >
+              MySHM.ru
+            </a>
         </div>
       </aside>
 
