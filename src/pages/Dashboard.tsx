@@ -137,7 +137,7 @@ function Dashboard() {
           to="/pays">
         <StatCard
           title="Платежи за последние 7 дней"
-          value={analytics?.counts.totalRevenue ?? '...'}
+          value={analytics?.counts.totalRevenue != null ? analytics.counts.totalRevenue.toLocaleString('ru-RU', { maximumFractionDigits: 1 }) : '...'}
           icon={Package}
           color="emerald"
           loading={loading}
