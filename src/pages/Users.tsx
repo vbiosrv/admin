@@ -26,7 +26,6 @@ const userColumns = [
   { key: 'discount', label: 'discount', visible: false, sortable: true },
   { key: 'dogovor', label: 'dogovor', visible: false, sortable: true },
   { key: 'gid', label: 'gid', visible: false, sortable: true },
-  { key: 'last_login', label: 'last_login', visible: false, sortable: true },
   { key: 'partner_id', label: 'partner_id', visible: false, sortable: true },
   { key: 'password', label: 'password', visible: false, sortable: true },
   { key: 'perm_credit', label: 'perm_credit', visible: false, sortable: true },
