@@ -337,7 +337,7 @@ function ConfigurationTabs() {
 
   const verifyAndEnableOtp = async () => {
     setOtpError('');
-    
+
     if (!otpVerifyToken) {
       setOtpError('Введите код из приложения');
       return;
@@ -348,7 +348,7 @@ function ConfigurationTabs() {
         method: 'POST',
         body: JSON.stringify({ token: otpVerifyToken }),
       });
-      
+
       if (response.data && response.data[0] && response.data[0].success) {
         toast.success('OTP успешно включен');
         setOtpSetupModal(false);
@@ -950,7 +950,9 @@ https://t.me/Name_bot?start=USER_ID
         <div className="space-y-4">
           {/* Список ботов - плиткой 3 в ряд */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Object.entries(telegramBots).map(([botName, bot]) => (
+            {Object.entries(telegramBots)
+              .filter(([botName, bot]) => typeof bot === 'object' && bot !== null && !Array.isArray(bot))
+              .map(([botName, bot]) => (
               <div
                 key={botName}
                 className="rounded-lg border p-4 cursor-pointer hover:opacity-80 transition-opacity"
