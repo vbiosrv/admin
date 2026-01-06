@@ -499,7 +499,7 @@ function ConfigurationTabs() {
     }
 
     try {
-      const url = webhookUrl || cliUrl || apiUrl;
+      const url = webhookUrl || apiUrl;
       if (!url) {
         toast.error('Не настроен URL для вебхука');
         return;
@@ -543,7 +543,7 @@ function ConfigurationTabs() {
   const openWebhookModal = (botName: string, bot: TelegramBot) => {
     setWebhookBotName(botName);
     setWebhookBotData(bot);
-    setWebhookUrl(cliUrl || apiUrl);
+    setWebhookUrl(apiUrl);
     setWebhookModalOpen(true);
   };
 
@@ -1341,9 +1341,6 @@ https://t.me/Name_bot?start=USER_ID
                   className="w-full px-3 py-2 rounded border"
                   style={inputStyles}
                 />
-                <p className="text-xs mt-1" style={{ color: 'var(--theme-content-text-muted)' }}>
-                  {cliUrl ? `Используется CLI URL: ${cliUrl}` : apiUrl ? `Используется API URL: ${apiUrl}` : 'URL не настроен'}
-                </p>
               </div>
 
               <div>
