@@ -118,22 +118,34 @@ function Subscription() {
     } catch (error: any) {
       console.error('Subscription loading exception:', error);
 
-      // Парсим JSON из текста ошибки
-      try {
-        const errorText = error.message || String(error);
-        const errorData = JSON.parse(errorText);
-
+      // Проверяем, есть ли данные ошибки в error.data
+      if (error.data && typeof error.data === 'object') {
         // Если это 404 (подписка не найдена), показываем форму без ошибки
-        if (errorData.status === 404 || errorData.status === '404') {
+        if (error.data.status === 404 || error.data.status === '404') {
           setShowSubscriptionForm(true);
           setSubscriptionInfo(null);
           setSubscriptionError('');
         } else {
-          setSubscriptionError(errorData.error || 'Ошибка загрузки информации о подписке');
+          setSubscriptionError(error.data.error || 'Ошибка загрузки информации о подписке');
         }
-      } catch {
-        // Если не удалось распарсить, показываем общую ошибку
-        setSubscriptionError('Ошибка загрузки информации о подписке');
+      } else {
+        // Парсим JSON из текста ошибки
+        try {
+          const errorText = error.message || String(error);
+          const errorData = JSON.parse(errorText);
+
+          // Если это 404 (подписка не найдена), показываем форму без ошибки
+          if (errorData.status === 404 || errorData.status === '404') {
+            setShowSubscriptionForm(true);
+            setSubscriptionInfo(null);
+            setSubscriptionError('');
+          } else {
+            setSubscriptionError(errorData.error || 'Ошибка загрузки информации о подписке');
+          }
+        } catch {
+          // Если не удалось распарсить, показываем общую ошибку
+          setSubscriptionError('Ошибка загрузки информации о подписке');
+        }
       }
     } finally {
       if (!isBackgroundUpdate) {
