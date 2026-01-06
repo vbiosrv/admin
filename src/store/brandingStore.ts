@@ -39,7 +39,9 @@ export const useBrandingStore = create<BrandingState>((set, get) => ({
           name: company.name || DEFAULT_BRANDING.name,
           logoUrl: company.logoUrl || DEFAULT_BRANDING.logoUrl,
         };
-        localStorage.setItem('version', result.version || 'unknown');
+        if (result.version) {
+          localStorage.setItem('version', result.version);
+        }
         set({ branding, loaded: true });
         document.title = branding.name;
       } else {

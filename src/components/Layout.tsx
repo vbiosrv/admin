@@ -193,7 +193,7 @@ function Layout() {
     return localStorage.getItem('cloud_sub') === 'active';
   });
   const hoverTimeoutRef = useRef<number | null>(null);
-  const local_version = localStorage.getItem('version');
+  const local_version = localStorage.getItem('version') || null;
 
   const showSwagger = import.meta.env.VITE_SHOW_SWAGGER === 'true';
 
