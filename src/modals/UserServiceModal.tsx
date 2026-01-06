@@ -198,8 +198,11 @@ export default function UserServiceModal({
     if (!formData.user_service_id) return;
 
     try {
+      const filter = {
+        user_service_id: formData.user_service_id,
+      };
       const res = await shm_request(
-        `shm/v1/admin/user/service/withdraw?user_service_id=${formData.user_service_id}&limit=1&sort_field=withdraw_date&sort_direction=desc`
+        `shm/v1/admin/user/service/withdraw?filter=${encodeURIComponent(JSON.stringify(filter))}&limit=1`
       );
       const data = res.data || res;
       const withdraws = Array.isArray(data) ? data : [];
