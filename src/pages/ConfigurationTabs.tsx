@@ -23,6 +23,67 @@ interface TelegramBot {
   webhook_set?: boolean;
 }
 
+const currencies = [
+  { "currency": "AED", "name": "Дирхам ОАЭ" },
+  { "currency": "AMD", "name": "Армянских драмов" },
+  { "currency": "AUD", "name": "Австралийский доллар" },
+  { "currency": "AZN", "name": "Азербайджанский манат" },
+  { "currency": "BDT", "name": "Так" },
+  { "currency": "BGN", "name": "Болгарский лев" },
+  { "currency": "BHD", "name": "Бахрейнский динар" },
+  { "currency": "BOB", "name": "Боливиано" },
+  { "currency": "BRL", "name": "Бразильский реал" },
+  { "currency": "BYN", "name": "Белорусский рубль" },
+  { "currency": "CAD", "name": "Канадский доллар" },
+  { "currency": "CHF", "name": "Швейцарский франк" },
+  { "currency": "CNY", "name": "Юань" },
+  { "currency": "CUP", "name": "Кубинских песо" },
+  { "currency": "CZK", "name": "Чешских крон" },
+  { "currency": "DKK", "name": "Датская крона" },
+  { "currency": "DZD", "name": "Алжирских динаров" },
+  { "currency": "EGP", "name": "Египетских фунтов" },
+  { "currency": "ETB", "name": "Эфиопских быров" },
+  { "currency": "EUR", "name": "Евро" },
+  { "currency": "GBP", "name": "Фунт стерлингов" },
+  { "currency": "GEL", "name": "Лари" },
+  { "currency": "HKD", "name": "Гонконгский доллар" },
+  { "currency": "HUF", "name": "Форинтов" },
+  { "currency": "IDR", "name": "Рупий" },
+  { "currency": "INR", "name": "Индийских рупий" },
+  { "currency": "IRR", "name": "Иранских риалов" },
+  { "currency": "JPY", "name": "Иен" },
+  { "currency": "KGS", "name": "Сомов" },
+  { "currency": "KRW", "name": "Вон" },
+  { "currency": "KZT", "name": "Тенге" },
+  { "currency": "MDL", "name": "Молдавских леев" },
+  { "currency": "MMK", "name": "Кьятов" },
+  { "currency": "MNT", "name": "Тугриков" },
+  { "currency": "NGN", "name": "Найр" },
+  { "currency": "NOK", "name": "Норвежских крон" },
+  { "currency": "NZD", "name": "Новозеландский доллар" },
+  { "currency": "OMR", "name": "Оманский риал" },
+  { "currency": "PLN", "name": "Злотый" },
+  { "currency": "QAR", "name": "Катарский риал" },
+  { "currency": "RON", "name": "Румынский лей" },
+  { "currency": "RUB", "name": "Российский рубль" },
+  { "currency": "RSD", "name": "Сербских динаров" },
+  { "currency": "SAR", "name": "Саудовский риял" },
+  { "currency": "SEK", "name": "Шведских крон" },
+  { "currency": "SGD", "name": "Сингапурский доллар" },
+  { "currency": "XTR", "name": "Telegram Stars" },
+  { "currency": "THB", "name": "Батов" },
+  { "currency": "TJS", "name": "Сомони" },
+  { "currency": "TMT", "name": "Новый туркменский манат" },
+  { "currency": "TRY", "name": "Турецких лир" },
+  { "currency": "UAH", "name": "Гривен" },
+  { "currency": "USD", "name": "Доллар США" },
+  { "currency": "UZS", "name": "Узбекских сумов" },
+  { "currency": "VND", "name": "Донгов" },
+  { "currency": "XDR", "name": "СДР (специальные права заимствования)" },
+  { "currency": "ZAR", "name": "Рэндов" }
+]
+
+
 function ConfigurationTabs() {
   const [activeTab, setActiveTab] = useState<TabType>('general');
   const [loading, setLoading] = useState(true);
@@ -35,6 +96,7 @@ function ConfigurationTabs() {
   const [apiUrl, setApiUrl] = useState('');
   const [cliUrl, setCliUrl] = useState('');
   const [billingType, setBillingType] = useState<'Simpler' | 'Honest'>('Simpler');
+  const [billingCurrency, setBillingCurrency] = useState('RUB');
   const [partnerIncomePercent, setPartnerIncomePercent] = useState(20);
   const [allowUserRegisterApi, setAllowUserRegisterApi] = useState(true);
 
@@ -186,6 +248,7 @@ function ConfigurationTabs() {
           setBillingType(item.value?.type || 'Simpler');
           setPartnerIncomePercent(item.value?.partner?.income_percent || 20);
           setAllowUserRegisterApi(item.value?.allow_user_register_api !== undefined ? item.value.allow_user_register_api : true);
+          setBillingCurrency(item.value?.currency || 'RUB' );
         } else if (item.key === 'company') {
           setCompanyName(item.value?.name || '');
           setLogoUrl(item.value?.logoUrl || '');
@@ -208,9 +271,9 @@ function ConfigurationTabs() {
 
   const saveConfigItem = async (key: string, value: any) => {
     try {
-      await shm_request('shm/v1/admin/config', {
+      await shm_request(`shm/v1/admin/config/${key}`, {
         method: 'POST',
-        body: JSON.stringify({ key, value }),
+        body: JSON.stringify(value),
       });
       toast.success(`Настройка "${key}" сохранена`);
       loadConfig();
@@ -232,6 +295,7 @@ function ConfigurationTabs() {
       type: billingType,
       partner: { income_percent: partnerIncomePercent },
       allow_user_register_api: allowUserRegisterApi,
+      currency: billingCurrency,
     });
   };
 
@@ -698,6 +762,23 @@ function ConfigurationTabs() {
                 >
                   <option value="Simpler">Simpler</option>
                   <option value="Honest">Honest</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
+                  Валюта биллинга
+                </label>
+                <select
+                  value={billingCurrency}
+                  onChange={(e) => setBillingCurrency(e.target.value)}
+                  className="w-full px-3 py-2 rounded border"
+                  style={inputStyles}
+                >
+                  {currencies.map((c) => (
+                    <option key={c.currency} value={c.currency}>
+                      {c.currency} - {c.name}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>

@@ -19,6 +19,5 @@ src/version
 *~
 .cache
 .temp
-build.ps1
 /.github
 vite.config-s.ts
