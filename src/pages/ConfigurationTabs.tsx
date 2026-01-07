@@ -664,6 +664,7 @@ function ConfigurationTabs() {
       [newBotName]: {
         token: newBotToken,
         secret: secret,
+        template_id: newBotTemplate || newBotName,
         webhook_set: false,
       },
     };
@@ -682,8 +683,8 @@ function ConfigurationTabs() {
     setEditingBotName(botName);
     setEditBotToken(bot.token);
     setEditBotSecret(bot.secret || '');
-    // Используем название бота как template_id для отображения
-    setEditBotTemplate(botName);
+    // Сохраняем реальный template_id если он присутствует, иначе используем ключ
+    setEditBotTemplate(bot.template_id || botName);
     setEditBotModalOpen(true);
   };
 
@@ -698,6 +699,7 @@ function ConfigurationTabs() {
       [editingBotName]: {
         token: editBotToken,
         secret: editBotSecret || undefined,
+        template_id: editBotTemplate || editingBotName,
         webhook_set: telegramBots[editingBotName]?.webhook_set || false,
       },
     };
@@ -754,7 +756,7 @@ function ConfigurationTabs() {
           url: url,
           secret: bot.secret,
           token: bot.token,
-          template_id: botName,
+          template_id: bot.template_id || botName,
         }),
       });
 
@@ -1463,7 +1465,8 @@ https://t.me/Name_bot?start=USER_ID
                     onChange={(id) => {
                       setNewBotTemplate(id);
                       if (id) {
-                        setNewBotName(id);
+                        // ключ для конфига не должен содержать слэши — заменяем их на нижнее подчёркивание
+                        setNewBotName(id.replace(/\//g, '_'));
                       }
                     }}
                     className="flex-1"
