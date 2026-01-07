@@ -55,7 +55,7 @@ function Subscription() {
     // Очистка интервала при размонтировании компонента
     return () => {
       if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
+        window.clearInterval(pollingIntervalRef.current);
       }
     };
   }, []);
@@ -64,20 +64,20 @@ function Subscription() {
   useEffect(() => {
     // Очищаем предыдущий интервал
     if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
+      window.clearInterval(pollingIntervalRef.current);
       pollingIntervalRef.current = null;
     }
 
     if (subscriptionInfo && subscriptionInfo.status === 'PROGRESS') {
       // Обновляем каждую секунду для статуса "В процессе"
-      pollingIntervalRef.current = setInterval(() => {
+      pollingIntervalRef.current = window.setInterval(() => {
         loadSubscriptionInfo(true); // Передаем флаг фонового обновления
       }, 1000);
     }
 
     return () => {
       if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
+        window.clearInterval(pollingIntervalRef.current);
       }
     };
   }, [subscriptionInfo?.status]);

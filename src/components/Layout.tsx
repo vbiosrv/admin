@@ -224,24 +224,21 @@ function Layout() {
         
         if (isValidUser) {
           localStorage.setItem('cloud_auth', 'authenticated');
-          // try {
-          //   const response = await shm_request('shm/v1/admin/cloud/proxy/service/sub/get');
-          //   const data = response.data || response;
-          //   if (data.status === 'ACTIVE') {
-
-                // Временно: разрешаем аналитику всем авторизованным в Cloud
+          try {
+            const response = await shm_request('shm/v1/admin/cloud/proxy/service/sub/get');
+            const data = response.data || response;
+            if (data.status === 'ACTIVE') {
                 localStorage.setItem('cloud_sub', 'active');
                 setHasCloudSub(true);
-
-          //   } else {
-          //     localStorage.removeItem('cloud_sub');
-          //     setHasCloudSub(false);
-          //   }
-          // } catch (error) {
-          //   // If error (e.g. 404), subscription is not active
-          //   localStorage.removeItem('cloud_sub');
-          //   setHasCloudSub(false);
-          // }
+            } else {
+              localStorage.removeItem('cloud_sub');
+              setHasCloudSub(false);
+            }
+          } catch (error) {
+            // If error (e.g. 404), subscription is not active
+            localStorage.removeItem('cloud_sub');
+            setHasCloudSub(false);
+          }
         } else {
           localStorage.removeItem('cloud_auth');
           localStorage.removeItem('cloud_sub');

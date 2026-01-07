@@ -39,20 +39,14 @@ function SHMCloud() {
         if (data.status === 'ACTIVE') {
           localStorage.setItem('cloud_sub', 'active');
         } else {
-          // localStorage.removeItem('cloud_sub');
-          // Временно: разрешаем аналитику всем авторизованным в Cloud
-          localStorage.setItem('cloud_sub', 'active');
-          // //
+          localStorage.removeItem('cloud_sub');
         }
         window.dispatchEvent(new CustomEvent('cloudSubChanged'));
       }
     } catch (error: any) {
       // При 404 ошибке очищаем информацию о подписке
       setSubscriptionInfo(null);
-      // localStorage.removeItem('cloud_sub');
-      // Временно: разрешаем аналитику всем авторизованным в Cloud
-      localStorage.setItem('cloud_sub', 'active');
-      // //
+      localStorage.removeItem('cloud_sub');
       window.dispatchEvent(new CustomEvent('cloudSubChanged'));
     }
   };
