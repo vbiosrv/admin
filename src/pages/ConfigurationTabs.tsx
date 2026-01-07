@@ -301,6 +301,10 @@ function ConfigurationTabs() {
     }
   };
 
+  const saveTelegramBot = (botKey: string, botValue: TelegramBot | null) => {
+    saveConfigItem('telegram', { [botKey]: botValue });
+  };
+
   const saveApiUrl = () => {
     saveConfigItem('api', { url: apiUrl });
   };
@@ -652,25 +656,19 @@ function ConfigurationTabs() {
       return;
     }
 
-    // Проверка что имя только латиница
-    if (!/^[a-zA-Z_]+$/.test(newBotName)) {
-      toast.error('Имя бота должно содержать только латинские буквы и подчеркивания');
+    // Проверяем, существует ли уже бот с таким template_id
+    if (telegramBots[newBotTemplate]) {
+      toast.error(`Бот с названием "${newBotTemplate}" уже существует`);
       return;
     }
 
     const secret = newBotSecret || generateSecret();
-    const updatedBots = {
-      ...telegramBots,
-      [newBotName]: {
-        token: newBotToken,
-        secret: secret,
-        template_id: newBotTemplate || newBotName,
-        webhook_set: false,
-      },
-    };
 
-    await saveConfigItem('telegram', {
-      ...updatedBots,
+    await saveTelegramBot(newBotTemplate, {
+      token: newBotToken,
+      secret,
+      template_id: newBotTemplate || newBotName,
+      webhook_set: false,
     });
     setNewBotName('');
     setNewBotToken('');
@@ -694,17 +692,19 @@ function ConfigurationTabs() {
       return;
     }
 
-    const updatedBots = {
-      ...telegramBots,
-      [editingBotName]: {
-        token: editBotToken,
-        secret: editBotSecret || undefined,
-        template_id: editBotTemplate || editingBotName,
-        webhook_set: telegramBots[editingBotName]?.webhook_set || false,
-      },
-    };
+    const newKey = editBotTemplate || editingBotName;
 
-    await saveConfigItem('telegram', updatedBots);
+    // Если template_id изменился, удаляем старый ключ
+    if (newKey !== editingBotName) {
+      await saveTelegramBot(editingBotName, null);
+    }
+
+    await saveTelegramBot(newKey, {
+      token: editBotToken,
+      secret: editBotSecret || undefined,
+      template_id: editBotTemplate || editingBotName,
+      webhook_set: telegramBots[editingBotName]?.webhook_set || false,
+    });
     setEditBotModalOpen(false);
   };
 
@@ -717,23 +717,15 @@ function ConfigurationTabs() {
     });
     if (!confirmed) return;
 
-    const updatedBots = { ...telegramBots };
-    delete updatedBots[botName];
-    await saveConfigItem('telegram', {
-      ...updatedBots,
-    });
+    // отправляем null как значение — бэкенд должен удалить ключ
+    await saveTelegramBot(botName, null);
   };
 
   const updateBotToken = async (botName: string, token: string) => {
-    const updatedBots = {
-      ...telegramBots,
-      [botName]: {
-        ...telegramBots[botName],
-        token,
-      },
-    };
-    await saveConfigItem('telegram', {
-      ...updatedBots,
+    // обновляем токен одного бота
+    await saveTelegramBot(botName, {
+      ...telegramBots[botName],
+      token,
     });
   };
 
@@ -756,23 +748,19 @@ function ConfigurationTabs() {
           url: url,
           secret: bot.secret,
           token: bot.token,
-          template_id: bot.template_id || botName,
+          template_id: bot.template_id,
         }),
       });
 
       if (response.ok && response.result) {
         // Обновляем webhook_set в конфиге
-        const updatedBots = {
-          ...telegramBots,
-          [botName]: {
+        if (bot.template_id) {
+          await saveTelegramBot(bot.template_id, {
             ...bot,
             webhook_set: true,
-          },
-        };
-        await saveConfigItem('telegram', {
-          ...updatedBots,
-        });
-        toast.success(response.description || `Вебхук для бота "${botName}" установлен`);
+          });
+        }
+        toast.success(response.description || `Вебхук для бота "${bot.template_id}" установлен`);
         setWebhookModalOpen(false);
         if (fromModal) {
           await loadConfig();
@@ -1402,6 +1390,22 @@ https://t.me/Name_bot?start=USER_ID
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
+                    Шаблон <span style={{ color: 'var(--accent-warning)' }}>*</span>
+                  </label>
+                    <TemplateSelect
+                    value={newBotTemplate}
+                    onChange={(id) => {
+                      setNewBotTemplate(id);
+                      if (id) {
+                        setNewBotName(id);
+                      }
+                    }}
+                    className="flex-1"
+                    placeholder="Выберите шаблон"
+                    />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
                     Название бота (Профиль - только латиница)
                   </label>
                   <input
@@ -1455,23 +1459,6 @@ https://t.me/Name_bot?start=USER_ID
                       Сгенерировать
                     </button>
                   </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
-                    Шаблон <span style={{ color: 'var(--accent-warning)' }}>*</span>
-                  </label>
-                    <TemplateSelect
-                    value={newBotTemplate}
-                    onChange={(id) => {
-                      setNewBotTemplate(id);
-                      if (id) {
-                        // ключ для конфига не должен содержать слэши — заменяем их на нижнее подчёркивание
-                        setNewBotName(id.replace(/\//g, '_'));
-                      }
-                    }}
-                    className="flex-1"
-                    placeholder="Выберите шаблон"
-                    />
                 </div>
                 <div className="flex gap-3">
                   <button
@@ -1588,6 +1575,18 @@ https://t.me/Name_bot?start=USER_ID
             </div>
 
             <div className="space-y-4">
+              {/* Шаблон */}
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
+                  Шаблон
+                </label>
+                <TemplateSelect
+                  value={editBotTemplate}
+                  onChange={(id) => setEditBotTemplate(id)}
+                  className="w-full"
+                />
+              </div>
+
               {/* Токен */}
               <div>
                 <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
@@ -1628,18 +1627,6 @@ https://t.me/Name_bot?start=USER_ID
                     Сгенерировать
                   </button>
                 </div>
-              </div>
-
-              {/* Шаблон */}
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
-                  Шаблон
-                </label>
-                <TemplateSelect
-                  value={editBotTemplate}
-                  onChange={(id) => setEditBotTemplate(id)}
-                  className="w-full"
-                />
               </div>
 
               {/* Статус вебхука */}
