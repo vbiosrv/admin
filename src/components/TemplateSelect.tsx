@@ -97,8 +97,11 @@ export default function TemplateSelect({
         .then(res => {
           const data = res.data || res;
           const templates = Array.isArray(data) ? data : [];
-          setAllTemplates(templates);
-          setItems(templates);
+          const sortedTemplates = templates.sort((a, b) =>
+            String(a.id || '').localeCompare(String(b.id || ''), undefined, { sensitivity: 'base' })
+          );
+          setAllTemplates(sortedTemplates);
+          setItems(sortedTemplates);
         })
         .catch(() => {})
         .finally(() => setLoading(false));
@@ -119,7 +122,10 @@ export default function TemplateSelect({
       .then(res => {
         const data = res.data || res;
         const templates = Array.isArray(data) ? data : [];
-        setItems(templates);
+        const sortedTemplates = templates.sort((a, b) =>
+          String(a.id || '').localeCompare(String(b.id || ''), undefined, { sensitivity: 'base' })
+        );
+        setItems(sortedTemplates);
       })
       .catch(() => {})
       .finally(() => {
@@ -281,8 +287,11 @@ export default function TemplateSelect({
         const res = await shm_request('shm/v1/admin/template?limit=0');
         const data = res.data || res;
         const templates = Array.isArray(data) ? data : [];
-        setAllTemplates(templates);
-        setItems(templates);
+        const sortedTemplates = templates.sort((a, b) =>
+          String(a.id || '').localeCompare(String(b.id || ''), undefined, { sensitivity: 'base' })
+        );
+        setAllTemplates(sortedTemplates);
+        setItems(sortedTemplates);
       }
 
       // Устанавливаем созданный шаблон как выбранный
