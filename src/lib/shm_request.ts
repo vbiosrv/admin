@@ -57,9 +57,11 @@ export interface ApiListResponse<T = any> {
 
 export function normalizeListResponse<T = any>(res: any): ApiListResponse<T> {
   if (Array.isArray(res)) {
-    return { data: res, total: res.length };
+    const filtered = res.filter(item => item != null);
+    return { data: filtered, total: filtered.length };
   }
-  const data = res.data || [];
+  const rawData = res.data || [];
+  const data = Array.isArray(rawData) ? rawData.filter(item => item != null) : [];
   const total = res.items ?? res.total ?? data.length;
   return { data, total };
 }
