@@ -288,6 +288,20 @@ function ConfigurationTabs() {
     }
   };
 
+  // await DeleteConfigItem('key', value);
+
+  const DeleteConfigItem = async (key: string, value: any) => {
+    try {
+      await shm_request(`shm/v1/admin/config/${key}?value=${value}`, {
+        method: 'DELETE',
+      });
+      toast.success(`"${key}" Удален`);
+      loadConfig();
+    } catch (error) {
+      toast.error('Ошибка удаления');
+    }
+  };
+
   const saveConfigItem = async (key: string, value: any) => {
     try {
       await shm_request(`shm/v1/admin/config/${key}`, {
@@ -446,7 +460,6 @@ function ConfigurationTabs() {
         setPasswordAuthDisabled(data.password_auth_disabled || false);
       }
     } catch (error) {
-      console.error('Error checking password auth status:', error);
     }
   };
 
@@ -717,8 +730,7 @@ function ConfigurationTabs() {
     });
     if (!confirmed) return;
 
-    // отправляем null как значение — бэкенд должен удалить ключ
-    await saveTelegramBot(botName, null);
+    await DeleteConfigItem('telegram', botName);
   };
 
   const updateBotToken = async (botName: string, token: string) => {
