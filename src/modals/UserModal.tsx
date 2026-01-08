@@ -192,6 +192,18 @@ export default function UserModal({
               style={inputStyles}
             />
           </div>
+          <div className="flex items-center gap-3">
+            <label className="w-28 text-sm font-medium shrink-0" style={labelStyles}>
+              Полное имя
+            </label>
+            <input
+              type="text"
+              value={formData.full_name || ''}
+              onChange={(e) => handleChange('full_name', e.target.value)}
+              className="flex-1 px-3 py-2 text-sm rounded border"
+              style={inputStyles}
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -224,24 +236,24 @@ export default function UserModal({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div className="flex items-center gap-3">
             <label className="w-28 text-sm font-medium shrink-0" style={labelStyles}>
-              Полное имя
-            </label>
-            <input
-              type="text"
-              value={formData.full_name || ''}
-              onChange={(e) => handleChange('full_name', e.target.value)}
-              className="flex-1 px-3 py-2 text-sm rounded border"
-              style={inputStyles}
-            />
-          </div>
-          <div className="flex items-center gap-3">
-            <label className="w-28 text-sm font-medium shrink-0" style={labelStyles}>
               Телефон
             </label>
             <input
               type="tel"
               value={formData.phone || ''}
               onChange={(e) => handleChange('phone', e.target.value)}
+              className="flex-1 px-3 py-2 text-sm rounded border"
+              style={inputStyles}
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="w-28 text-sm font-medium shrink-0" style={labelStyles}>
+              ID агента
+            </label>
+            <input
+              type="number"
+              value={formData.partner_id || ''}
+              onChange={(e) => handleChange('partner_id', e.target.value)}
               className="flex-1 px-3 py-2 text-sm rounded border"
               style={inputStyles}
             />
@@ -347,6 +359,8 @@ export default function UserModal({
               <span className="text-xs whitespace-nowrap" style={labelStyles}>Безлимит</span>
             </label>
           </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div className="flex items-center gap-3">
             <label className="w-28 text-sm font-medium shrink-0" style={labelStyles}>
               Скидка %
