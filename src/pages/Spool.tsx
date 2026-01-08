@@ -8,15 +8,22 @@ import { Plus } from 'lucide-react';
 
 const spoolColumns = [
   { key: 'created', label: 'Создано', visible: true, sortable: true },
-  { key: 'user_id', label: 'Пользователь', visible: true, sortable: true },
-  { key: 'event', label: 'Событие', visible: true, sortable: true },
+  { key: 'user_id', label: 'USER ID', visible: true, sortable: true },
+  {
+    key: 'event',
+    label: 'Событие',
+    visible: true,
+    sortable: true,
+    filterKey: 'event.title',
+    render: (value: any, row: any) => row?.event?.name || null
+  },
   {
     key: 'title',
     label: 'Название',
     visible: true,
-    sortable: false,
+    sortable: true,
     filterKey: 'event.title',
-    render: (value: any, row: any) => row?.event?.title || '-'
+    render: (value: any, row: any) => row?.event?.title || null
   },
   {
     key: 'status',
@@ -33,13 +40,14 @@ const spoolColumns = [
       { value: 'NEW', label: 'NEW' },
     ]
   },
-  { key: 'executed', label: 'Выполнено', visible: true, sortable: true },
-  { key: 'id', label: 'ID', visible: false, sortable: true },
-  { key: 'user_service_id', label: 'Услуга', visible: false, sortable: true },
-  { key: 'prio', label: 'Приоритет', visible: false, sortable: true },
-  { key: 'spool_id', label: 'spool_id', visible: false, sortable: true },
+  { key: 'response', label: 'response', visible: true, sortable: false, filterable: false },
   { key: 'delayed', label: 'Задержка', visible: false, sortable: true },
-  { key: 'settings', label: 'settings', visible: false, sortable: true },
+  { key: 'event', label: 'Событие', visible: false, sortable: false, filterable: false },
+  { key: 'executed', label: 'Выполнено', visible: false, sortable: true },
+  { key: 'id', label: 'ID', visible: false, sortable: true },
+  { key: 'prio', label: 'Приоритет', visible: false, sortable: true },
+  { key: 'settings', label: 'Settings', visible: false, sortable: false, filterable: false },
+  { key: 'user_service_id', label: 'user_service_id', visible: false, sortable: true },
 ];
 
 function Spool() {

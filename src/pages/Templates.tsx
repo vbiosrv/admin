@@ -7,6 +7,7 @@ import { Plus, Upload } from 'lucide-react';
 
 const templateColumns = [
   { key: 'id', label: 'Имя шаблона', visible: true, sortable: true },
+  { key: 'settings', label: 'Настройки', visible: true, sortable: false, filterable: false },
 ];
 
 function Templates() {
@@ -96,7 +97,7 @@ function Templates() {
             title="Загрузить из файла"
           >
             <Upload className="w-4 h-4" />
-            
+
           <span className="hidden sm:inline">Загрузить из файла</span>
           </button>
           <button

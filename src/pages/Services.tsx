@@ -9,12 +9,22 @@ import { Plus } from 'lucide-react';
 const serviceColumns = [
   { key: 'service_id', label: 'ID', visible: true, sortable: true },
   { key: 'name', label: 'Название', visible: true, sortable: true },
-  { key: 'cost', label: 'Стоимость', visible: true, sortable: true },
-  { key: 'period', label: 'Период', visible: true, sortable: true },
   { key: 'category', label: 'Категория', visible: true, sortable: true },
+  { key: 'cost', label: 'Стоимость', visible: true, sortable: true },
+  { key: 'period', label: 'Период', visible: false, sortable: true },
   { key: 'allow_to_order', label: 'Доступна', visible: false, sortable: false },
   { key: 'deleted', label: 'Удалена', visible: false, sortable: false },
   { key: 'descr', label: 'Описание', visible: false, sortable: false },
+  { key: 'config', label: 'Settings', visible: false, sortable: false },
+  { key: 'deleted', label: 'Удалена', visible: false, sortable: true },
+  { key: 'is_composite', label: 'is_composite', visible: false, sortable: true },
+  { key: 'max_count', label: 'max_count', visible: false, sortable: true },
+  { key: 'next', label: 'next', visible: false, sortable: true },
+  { key: 'no_discount', label: 'no_discount', visible: false, sortable: true },
+  { key: 'pay_always', label: 'pay_always', visible: false, sortable: true },
+  { key: 'pay_in_credit', label: 'pay_in_credit', visible: false, sortable: true },
+  { key: 'question', label: 'question', visible: false, sortable: true },
+  { key: 'children', label: 'children', visible: false, sortable: true },
 ];
 
 function Services() {

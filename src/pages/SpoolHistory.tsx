@@ -8,20 +8,27 @@ import { useSelectedUserStore } from '../store/selectedUserStore';
 const spoolHistoryColumns = [
   { key: 'executed', label: 'Выполнено', visible: true, sortable: true },
   { key: 'user_id', label: 'USER ID', visible: true, sortable: true },
-  { key: 'event', label: 'Событие', visible: true, sortable: true },
+  {
+    key: 'event',
+    label: 'Событие',
+    visible: true,
+    sortable: true,
+    filterKey: 'event.title',
+    render: (value: any, row: any) => row?.event?.name || null
+  },
   {
     key: 'title',
     label: 'Название',
     visible: true,
-    sortable: false,
+    sortable: true,
     filterKey: 'event.title',
-    render: (value: any, row: any) => row?.event?.title || '-'
+    render: (value: any, row: any) => row?.event?.title || null
   },
   {
     key: 'status',
     label: 'Статус',
     visible: true,
-    sortable: false,
+    sortable: true,
     filterType: 'select' as const,
     filterOptions: [
       { value: 'DELAYED', label: 'DELAYED' },
@@ -32,14 +39,15 @@ const spoolHistoryColumns = [
       { value: 'NEW', label: 'NEW' },
     ]
   },
-  { key: 'response', label: 'response', visible: true, sortable: true },
-  { key: 'id', label: 'ID', visible: false, sortable: true },
-  { key: 'user_service_id', label: 'US ID', visible: false, sortable: true },
-  { key: 'prio', label: 'Приоритет', visible: false, sortable: true },
+  { key: 'response', label: 'response', visible: true, sortable: false, filterable: false },
   { key: 'created', label: 'Создано', visible: false, sortable: true },
-  { key: 'spool_id', label: 'spool_id', visible: false, sortable: true },
   { key: 'delayed', label: 'Задержка', visible: false, sortable: true },
-  { key: 'settings', label: 'settings', visible: false, sortable: true },
+  { key: 'event', label: 'Событие', visible: false, sortable: false, filterable: false },
+  { key: 'id', label: 'ID', visible: false, sortable: true },
+  { key: 'prio', label: 'Приоритет', visible: false, sortable: true },
+  { key: 'settings', label: 'Settings', visible: false, sortable: false, filterable: false },
+  { key: 'spool_id', label: 'spool_id', visible: false, sortable: true },
+  { key: 'user_service_id', label: 'user_service_id', visible: false, sortable: true },
 ];
 
 function SpoolHistory() {
