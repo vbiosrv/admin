@@ -98,6 +98,19 @@ export interface AnalyticsReport {
     services_purchased: number;
     active_services: number;
   }[];
+  top_partners: {
+    user_id: number;
+    login: string;
+    full_name: string;
+    registration_date: string;
+    current_bonus: string;
+    referrals_count: number;
+    active_referrals: number;
+    paying_referrals: number;
+    referrals_revenue: string;
+    total_earned_bonuses: string;
+    earnings_count: number;
+  }[];
   churn: {
     new_users: number;
     paying_users: number;
@@ -175,6 +188,17 @@ export interface AnalyticsReport {
     }[];
     period_months: number;
   };
+  bonus_metrics: {
+    accrued_bonuses: string;
+    used_bonuses: string;
+    total_revenue: string;
+    partner_percent: string;
+    possible_bonuses: string;
+    actual_percent: string;
+    bonus_load_percent: string;
+    bonus_debt: string;
+    debt_share_percent: string;
+  };
 }
 
 export async function fetchAnalyticsReport(months: number = 6, noCache: boolean = false): Promise<AnalyticsReport> {
@@ -184,14 +208,14 @@ export async function fetchAnalyticsReport(months: number = 6, noCache: boolean 
     if (noCache) {
       params.set('no_cache', '1');
     }
-    
+
     const response = await shm_request(`shm/v1/admin/analytics?${params.toString()}`);
     const normalized = normalizeListResponse(response);
-    
+
     if (normalized.data && normalized.data.length > 0) {
       return normalized.data[0] as AnalyticsReport;
     }
-    
+
     throw new Error('No analytics data received');
   } catch (error) {
     console.error('Error fetching analytics:', error);
@@ -210,6 +234,13 @@ export function formatMoney(value: string | number): string {
   const num = typeof value === 'string' ? parseFloat(value) : value;
   if (isNaN(num)) return '0 ₽';
   return `${num.toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ₽`;
+}
+
+// Форматирование бонусов (с буквой "б" вместо ₽)
+export function formatBonus(value: string | number): string {
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(num)) return '0 ⓑ';
+  return `${num.toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ⓑ`;
 }
 
 // Форматирование процентов
