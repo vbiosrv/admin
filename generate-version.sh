@@ -6,7 +6,6 @@ OUTPUT_FILE="${1:-/app/version.json}"
 
 # Get git info for frontend
 FRONTEND_COMMIT_SHA=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
-FRONTEND_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
 FRONTEND_REMOTE=$(git config --get remote.origin.url 2>/dev/null || echo "")
 
 # Generate frontend commit URL
@@ -20,6 +19,7 @@ fi
 
 # Backend info (can be overridden by env vars)
 FRONTEND_VERSION="${FRONTEND_VERSION:-}"
+FRONTEND_BRANCH="${FRONTEND_BRANCH:-}"
 BACKEND_COMMIT_SHA="${BACKEND_COMMIT_SHA:-}"
 BACKEND_BRANCH="${BACKEND_BRANCH:-}"
 BACKEND_COMMIT_URL="${BACKEND_COMMIT_URL:-}"

@@ -60,6 +60,7 @@ jobs:
           push: true
           build-args: |
             FRONTEND_VERSION=${{ steps.version.outputs.minor }}
+            FRONTEND_BRANCH=main
             BACKEND_COMMIT_SHA=${{ steps.backend.outputs.sha }}
             BACKEND_BRANCH=${{ steps.backend.outputs.branch }}
             BACKEND_COMMIT_URL=${{ steps.backend.outputs.url }}
@@ -68,4 +69,5 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/shm-admin:${{ steps.version.outputs.minor }}
             ${{ secrets.DOCKERHUB_USERNAME }}/shm-admin:latest
           cache-from: type=gha
+          platforms: linux/amd64,linux/arm64
           cache-to: type=gha,mode=max
