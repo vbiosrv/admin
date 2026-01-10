@@ -3,15 +3,9 @@ import { Link } from 'react-router-dom';
 import {
   Users,
   Package,
-  Server,
-  CreditCard,
-  Activity,
   TrendingUp,
   ArrowRight,
-  DollarSign,
   RefreshCw,
-  ArrowUpRight,
-  ArrowDownRight,
 } from 'lucide-react';
 import { StatCard, StatCardGrid, ChartCard } from '../components/analytics';
 import { AreaLineChart, BarChart } from '../components/charts';

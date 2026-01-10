@@ -24,16 +24,37 @@ function Events() {
   const [sortField, setSortField] = useState<string | undefined>();
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [filterMode, setFilterMode] = useState<'like' | 'exact'>('like');
   const [selectedRow, setSelectedRow] = useState<any>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
-  const fetchData = useCallback((l: number, o: number, f: Record<string, string>, sf?: string, sd?: SortDirection) => {
+  const fetchData = useCallback((l: number, o: number, f: Record<string, string>, fm: 'like' | 'exact', sf?: string, sd?: SortDirection) => {
     setLoading(true);
     let url = `shm/v1/admin/service/event?limit=${l}&offset=${o}`;
 
-    if (Object.keys(f).length > 0) {
-      url += `&filter=${encodeURIComponent(JSON.stringify(f))}`;
+    const activeFilters: Record<string, any> = {};
+    Object.entries(f).forEach(([key, value]) => {
+      if (value) {
+        const filterValue = fm === 'like' ? { '-like': `%${value}%` } : value;
+        if (key.includes('.')) {
+          const parts = key.split('.');
+          let current = activeFilters;
+          for (let i = 0; i < parts.length - 1; i++) {
+            if (!current[parts[i]]) {
+              current[parts[i]] = {};
+            }
+            current = current[parts[i]];
+          }
+          current[parts[parts.length - 1]] = filterValue;
+        } else {
+          activeFilters[key] = filterValue;
+        }
+      }
+    });
+
+    if (Object.keys(activeFilters).length > 0) {
+      url += `&filter=${encodeURIComponent(JSON.stringify(activeFilters))}`;
     }
 
     if (sf && sd) {
@@ -54,8 +75,8 @@ function Events() {
   }, []);
 
   useEffect(() => {
-    fetchData(limit, offset, filters, sortField, sortDirection);
-  }, [limit, offset, filters, sortField, sortDirection]);
+    fetchData(limit, offset, filters, filterMode, sortField, sortDirection);
+  }, [limit, offset, filters, filterMode, sortField, sortDirection]);
 
   const handlePageChange = (newLimit: number, newOffset: number) => {
     setLimit(newLimit);
@@ -68,8 +89,9 @@ function Events() {
     setOffset(0);
   };
 
-  const handleFilterChange = useCallback((newFilters: Record<string, string>) => {
+  const handleFilterChange = useCallback((newFilters: Record<string, string>, newFilterMode: 'like' | 'exact') => {
     setFilters(newFilters);
+    setFilterMode(newFilterMode);
     setOffset(0);
   }, []);
 
@@ -87,7 +109,7 @@ function Events() {
       method: 'POST',
       body: JSON.stringify(eventData),
     });
-    fetchData(limit, offset, filters, sortField, sortDirection);
+    fetchData(limit, offset, filters, filterMode, sortField, sortDirection);
   };
 
   const handleSaveNew = async (eventData: any) => {
@@ -95,7 +117,7 @@ function Events() {
       method: 'PUT',
       body: JSON.stringify(eventData),
     });
-    fetchData(limit, offset, filters, sortField, sortDirection);
+    fetchData(limit, offset, filters, filterMode, sortField, sortDirection);
   };
 
   const handleDelete = async () => {
@@ -104,7 +126,7 @@ function Events() {
     await shm_request(`shm/v1/admin/service/event?id=${selectedRow.id}`, {
       method: 'DELETE',
     });
-    fetchData(limit, offset, filters, sortField, sortDirection);
+    fetchData(limit, offset, filters, filterMode, sortField, sortDirection);
   };
 
   return (
@@ -138,7 +160,7 @@ function Events() {
         sortField={sortField}
         sortDirection={sortDirection}
         onRowClick={handleRowClick}
-        onRefresh={() => fetchData(limit, offset, filters, sortField, sortDirection)}
+        onRefresh={() => fetchData(limit, offset, filters, filterMode, sortField, sortDirection)}
         storageKey="events"
       />
 

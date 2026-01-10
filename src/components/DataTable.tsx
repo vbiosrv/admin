@@ -16,7 +16,9 @@ import {
   ArrowUpDown,
   ChevronDown,
   Timer,
-  ListRestart
+  ListRestart,
+  CaseSensitive,
+  Percent
 } from 'lucide-react';
 
 interface Column {
@@ -45,7 +47,7 @@ interface DataTableProps {
   onRowClick?: (row: any) => void;
   onRefresh?: () => void;
   onSort?: (field: string, direction: SortDirection) => void;
-  onFilterChange?: (filters: Record<string, string>) => void;
+  onFilterChange?: (filters: Record<string, string>, filterMode: 'like' | 'exact') => void;
   sortField?: string;
   sortDirection?: SortDirection;
   height?: string;
@@ -64,9 +66,12 @@ const AUTO_REFRESH_OPTIONS = [
   { value: 30, label: '30 сек' },
 ];
 
+type FilterMode = 'like' | 'exact';
+
 interface StoredSettings {
   columns: { key: string; visible: boolean; width: number }[];
   autoRefresh: number;
+  filterMode?: FilterMode;
 }
 
 function loadSettings(storageKey: string): StoredSettings | null {
@@ -168,6 +173,12 @@ function DataTable({
     return stored?.autoRefresh ?? 0;
   });
 
+  const [filterMode, setFilterMode] = useState<FilterMode>(() => {
+    if (!storageKey) return 'like';
+    const stored = loadSettings(storageKey);
+    return stored?.filterMode ?? 'like';
+  });
+
   const [showAutoRefreshMenu, setShowAutoRefreshMenu] = useState(false);
 
   const tableRef = useRef<HTMLDivElement>(null);
@@ -209,28 +220,28 @@ function DataTable({
 
     if (!isFilterInitialized.current) {
       isFilterInitialized.current = true;
-      const formattedFilters: Record<string, string> = {};
+      const activeFilters: Record<string, string> = {};
       Object.entries(columnFilters).forEach(([key, value]) => {
         if (value) {
-          formattedFilters[key] = `%${value}%`;
+          activeFilters[key] = value;
         }
       });
-      prevFormattedFiltersRef.current = JSON.stringify(formattedFilters);
+      prevFormattedFiltersRef.current = JSON.stringify(activeFilters);
       return;
     }
 
     filterTimeoutRef.current = setTimeout(() => {
-      const formattedFilters: Record<string, string> = {};
+      const activeFilters: Record<string, string> = {};
       Object.entries(columnFilters).forEach(([key, value]) => {
         if (value) {
-          formattedFilters[key] = `%${value}%`;
+          activeFilters[key] = value;
         }
       });
 
-      const filtersString = JSON.stringify(formattedFilters);
+      const filtersString = JSON.stringify(activeFilters);
       if (filtersString !== prevFormattedFiltersRef.current) {
         prevFormattedFiltersRef.current = filtersString;
-        onFilterChange(formattedFilters);
+        onFilterChange(activeFilters, filterMode);
       }
     }, 1000);
 
@@ -239,7 +250,7 @@ function DataTable({
         clearTimeout(filterTimeoutRef.current);
       }
     };
-  }, [columnFilters, onFilterChange]);
+  }, [columnFilters, onFilterChange, filterMode]);
 
   useEffect(() => {
     if (!loading && isFirstLoad.current) {
@@ -262,10 +273,11 @@ function DataTable({
         width: col.width || DEFAULT_COLUMN_WIDTH,
       })),
       autoRefresh,
+      filterMode,
     };
 
     saveSettings(storageKey, settings);
-  }, [columns, autoRefresh, storageKey]);
+  }, [columns, autoRefresh, filterMode, storageKey]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -460,6 +472,35 @@ function DataTable({
               <ListRestart className="w-4 h-4" />
             </button>
           )}
+          <button
+            onClick={() => {
+              const newMode = filterMode === 'like' ? 'exact' : 'like';
+              setFilterMode(newMode);
+              // Переприменяем фильтры с новым режимом
+              if (onFilterChange && Object.keys(columnFilters).length > 0) {
+                const activeFilters: Record<string, string> = {};
+                Object.entries(columnFilters).forEach(([key, value]) => {
+                  if (value) {
+                    activeFilters[key] = value;
+                  }
+                });
+                prevFormattedFiltersRef.current = JSON.stringify(activeFilters);
+                onFilterChange(activeFilters, newMode);
+              }
+            }}
+            className="btn-icon flex items-center gap-1"
+            title={filterMode === 'like' ? 'Частичное совпадение (LIKE)' : 'Точное совпадение'}
+            style={{
+              color: filterMode === 'exact' ? 'var(--accent-primary)' : undefined,
+            }}
+          >
+            {filterMode === 'like' ? (
+              <Percent className="w-4 h-4" />
+            ) : (
+              <CaseSensitive className="w-4 h-4" />
+            )}
+            <span className="text-xs hidden sm:inline">{filterMode === 'like' ? 'LIKE' : '='}</span>
+          </button>
           <button
             onClick={clearAllFilters}
             className="btn-icon"

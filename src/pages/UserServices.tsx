@@ -68,6 +68,7 @@ function UserServices() {
     }
     return {} as Record<string, string>;
   });
+  const [filterMode, setFilterMode] = useState<'like' | 'exact'>('like');
   const [selectedRow, setSelectedRow] = useState<any>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -79,14 +80,27 @@ function UserServices() {
     return undefined;
   }, [selectedUser]);
 
-  const fetchData = useCallback((l: number, o: number, f: Record<string, string>, sf?: string, sd?: SortDirection) => {
+  const fetchData = useCallback((l: number, o: number, f: Record<string, string>, fm: 'like' | 'exact', sf?: string, sd?: SortDirection) => {
     setLoading(true);
     let url = `shm/v1/admin/user/service?limit=${l}&offset=${o}`;
 
-    const activeFilters: Record<string, string> = {};
+    const activeFilters: Record<string, any> = {};
     Object.entries(f).forEach(([key, value]) => {
       if (value) {
-        activeFilters[key] = value;
+        const filterValue = fm === 'like' ? { '-like': `%${value}%` } : value;
+        if (key.includes('.')) {
+          const parts = key.split('.');
+          let current = activeFilters;
+          for (let i = 0; i < parts.length - 1; i++) {
+            if (!current[parts[i]]) {
+              current[parts[i]] = {};
+            }
+            current = current[parts[i]];
+          }
+          current[parts[parts.length - 1]] = filterValue;
+        } else {
+          activeFilters[key] = filterValue;
+        }
       }
     });
 
@@ -120,8 +134,8 @@ function UserServices() {
   }, []);
 
   useEffect(() => {
-    fetchData(limit, offset, filters, sortField, sortDirection);
-  }, [limit, offset, filters, sortField, sortDirection]);
+    fetchData(limit, offset, filters, filterMode, sortField, sortDirection);
+  }, [limit, offset, filters, filterMode, sortField, sortDirection]);
 
   const handlePageChange = (newLimit: number, newOffset: number) => {
     setLimit(newLimit);
@@ -134,7 +148,7 @@ function UserServices() {
     setOffset(0);
   };
 
-  const handleFilterChange = useCallback((newFilters: Record<string, string>) => {
+  const handleFilterChange = useCallback((newFilters: Record<string, string>, newFilterMode: 'like' | 'exact') => {
     setFilters(prevFilters => {
       const filtersChanged = JSON.stringify(prevFilters) !== JSON.stringify(newFilters);
       if (filtersChanged) {
@@ -143,6 +157,7 @@ function UserServices() {
       }
       return prevFilters;
     });
+    setFilterMode(newFilterMode);
   }, []);
 
   const handleRowClick = (row: any) => {
@@ -159,7 +174,7 @@ function UserServices() {
       method: 'POST',
       body: JSON.stringify(serviceData),
     });
-    fetchData(limit, offset, filters, sortField, sortDirection);
+    fetchData(limit, offset, filters, filterMode, sortField, sortDirection);
   };
 
   const handleSaveNew = async (serviceData: any) => {
@@ -167,7 +182,7 @@ function UserServices() {
       method: 'PUT',
       body: JSON.stringify(serviceData),
     });
-    fetchData(limit, offset, filters, sortField, sortDirection);
+    fetchData(limit, offset, filters, filterMode, sortField, sortDirection);
   };
 
   const handleDelete = async () => {
@@ -176,11 +191,11 @@ function UserServices() {
     await shm_request(`shm/v1/admin/user/service?user_id=${selectedRow.user_id}&user_service_id=${selectedRow.user_service_id}`, {
       method: 'DELETE',
     });
-    fetchData(limit, offset, filters, sortField, sortDirection);
+    fetchData(limit, offset, filters, filterMode, sortField, sortDirection);
   };
 
   const handleRefresh = () => {
-    fetchData(limit, offset, filters, sortField, sortDirection);
+    fetchData(limit, offset, filters, filterMode, sortField, sortDirection);
   };
 
   const handleLoadChildren = async (parentRow: any): Promise<any[]> => {
@@ -191,7 +206,6 @@ function UserServices() {
       const { data: items } = normalizeListResponse(res);
       return items;
     } catch (error) {
-      console.error('Error loading children:', error);
       return [];
     }
   };

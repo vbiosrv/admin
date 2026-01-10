@@ -19,16 +19,18 @@ function Templates() {
   const [sortField, setSortField] = useState<string | undefined>();
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [filterMode, setFilterMode] = useState<'like' | 'exact'>('like');
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
-  const fetchData = useCallback((l: number, o: number, f: Record<string, string>, sf?: string, sd?: SortDirection) => {
+  const fetchData = useCallback((l: number, o: number, f: Record<string, string>, fm: 'like' | 'exact', sf?: string, sd?: SortDirection) => {
     setLoading(true);
     let url = `shm/v1/admin/template?limit=${l}&offset=${o}`;
 
     const activeFilters: Record<string, any> = {};
     Object.entries(f).forEach(([key, value]) => {
       if (value) {
+        const filterValue = fm === 'like' ? { '-like': `%${value}%` } : value;
         // Поддержка вложенных фильтров (например event.title -> {"event":{"title":{"-like":"%value%"}}})
         if (key.includes('.')) {
           const parts = key.split('.');
@@ -39,9 +41,9 @@ function Templates() {
             }
             current = current[parts[i]];
           }
-          current[parts[parts.length - 1]] = { '-like': value };
+          current[parts[parts.length - 1]] = filterValue;
         } else {
-          activeFilters[key] = { '-like': value };
+          activeFilters[key] = filterValue;
         }
       }
     });
@@ -80,8 +82,8 @@ function Templates() {
   }, []);
 
   useEffect(() => {
-    fetchData(limit, offset, filters, sortField, sortDirection);
-  }, [limit, offset, filters, sortField, sortDirection]);
+    fetchData(limit, offset, filters, filterMode, sortField, sortDirection);
+  }, [limit, offset, filters, filterMode, sortField, sortDirection]);
 
   const handlePageChange = (newLimit: number, newOffset: number) => {
     setLimit(newLimit);
@@ -94,8 +96,9 @@ function Templates() {
     setOffset(0);
   };
 
-  const handleFilterChange = useCallback((newFilters: Record<string, string>) => {
+  const handleFilterChange = useCallback((newFilters: Record<string, string>, newFilterMode: 'like' | 'exact') => {
     setFilters(newFilters);
+    setFilterMode(newFilterMode);
     setOffset(0);
   }, []);
 
@@ -147,7 +150,7 @@ function Templates() {
         sortField={sortField}
         sortDirection={sortDirection}
         onRowClick={handleRowClick}
-        onRefresh={() => fetchData(limit, offset, filters, sortField, sortDirection)}
+        onRefresh={() => fetchData(limit, offset, filters, filterMode, sortField, sortDirection)}
         storageKey="templates"
       />
       <TemplateCreateModal
@@ -158,7 +161,7 @@ function Templates() {
             method: 'PUT',
             body: JSON.stringify(data),
           });
-          fetchData(limit, offset, filters, sortField, sortDirection);
+          fetchData(limit, offset, filters, filterMode, sortField, sortDirection);
         }}
       />
       <TemplateUploadModal
@@ -169,7 +172,7 @@ function Templates() {
             method: 'PUT',
             body: JSON.stringify(data),
           });
-          fetchData(limit, offset, filters, sortField, sortDirection);
+          fetchData(limit, offset, filters, filterMode, sortField, sortDirection);
         }}
       />
     </div>

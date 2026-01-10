@@ -90,11 +90,9 @@ function Subscription() {
 
     try {
       const response = await shm_request('shm/v1/admin/cloud/proxy/service/sub/get');
-      console.log('Subscription response:', response);
 
       // Проверяем, есть ли ошибка в ответе
       if (response.error) {
-        console.log('Response has error:', response.error, 'status:', response.status);
         // Если ошибка с кодом 404 (подписка не найдена), показываем форму без ошибки
         if (response.status === 404 || response.status === '404') {
           setShowSubscriptionForm(true);
@@ -116,7 +114,6 @@ function Subscription() {
         }
       }
     } catch (error: any) {
-      console.error('Subscription loading exception:', error);
 
       // Проверяем, есть ли данные ошибки в error.data
       if (error.data && typeof error.data === 'object') {

@@ -29,6 +29,7 @@ function Storage() {
     }
     return {} as Record<string, string>;
   });
+  const [filterMode, setFilterMode] = useState<'like' | 'exact'>('like');
   const [selectedRow, setSelectedRow] = useState<any>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -39,14 +40,27 @@ function Storage() {
     return undefined;
   }, [selectedUser]);
 
-  const fetchData = useCallback((l: number, o: number, f: Record<string, string>, sf?: string, sd?: SortDirection) => {
+  const fetchData = useCallback((l: number, o: number, f: Record<string, string>, fm: 'like' | 'exact', sf?: string, sd?: SortDirection) => {
     setLoading(true);
     let url = `shm/v1/admin/storage/manage?limit=${l}&offset=${o}`;
 
-    const activeFilters: Record<string, string> = {};
+    const activeFilters: Record<string, any> = {};
     Object.entries(f).forEach(([key, value]) => {
       if (value) {
-        activeFilters[key] = value;
+        const filterValue = fm === 'like' ? { '-like': `%${value}%` } : value;
+        if (key.includes('.')) {
+          const parts = key.split('.');
+          let current = activeFilters;
+          for (let i = 0; i < parts.length - 1; i++) {
+            if (!current[parts[i]]) {
+              current[parts[i]] = {};
+            }
+            current = current[parts[i]];
+          }
+          current[parts[parts.length - 1]] = filterValue;
+        } else {
+          activeFilters[key] = filterValue;
+        }
       }
     });
 
@@ -68,8 +82,8 @@ function Storage() {
   }, []);
 
   useEffect(() => {
-    fetchData(limit, offset, filters, sortField, sortDirection);
-  }, [limit, offset, filters, sortField, sortDirection]);
+    fetchData(limit, offset, filters, filterMode, sortField, sortDirection);
+  }, [limit, offset, filters, filterMode, sortField, sortDirection]);
 
   const handlePageChange = (newLimit: number, newOffset: number) => {
     setLimit(newLimit);
@@ -82,8 +96,9 @@ function Storage() {
     setOffset(0);
   };
 
-  const handleFilterChange = useCallback((newFilters: Record<string, string>) => {
+  const handleFilterChange = useCallback((newFilters: Record<string, string>, newFilterMode: 'like' | 'exact') => {
     setFilters(newFilters);
+    setFilterMode(newFilterMode);
     setOffset(0);
   }, []);
 
@@ -111,7 +126,7 @@ function Storage() {
         sortField={sortField}
         sortDirection={sortDirection}
         onRowClick={handleRowClick}
-        onRefresh={() => fetchData(limit, offset, filters, sortField, sortDirection)}
+        onRefresh={() => fetchData(limit, offset, filters, filterMode, sortField, sortDirection)}
         storageKey="storage"
         externalFilters={externalFilters}
       />
@@ -125,7 +140,7 @@ function Storage() {
           await shm_request(`shm/v1/admin/storage/manage/${name}?user_id=${selectedRow.user_id}`, {
             method: 'DELETE',
           });
-          fetchData(limit, offset, filters, sortField, sortDirection);
+          fetchData(limit, offset, filters, filterMode, sortField, sortDirection);
         }}
       />
     </div>
