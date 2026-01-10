@@ -20,8 +20,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Send,
-  Star,
-  Github,
+  Heart,
   BarChart3,
   ListTodo,
 } from 'lucide-react';
@@ -188,7 +187,6 @@ function Layout() {
   const [menuPosition, setMenuPosition] = useState<{ top: number } | null>(null);
   const [selectedData, setSelectedData] = useState<any>(null);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
-  const [stars, setStars] = useState<number | null>(null);
   const [hasCloudSub, setHasCloudSub] = useState<boolean>(() => {
     return localStorage.getItem('cloud_sub') === 'active';
   });
@@ -252,66 +250,6 @@ function Layout() {
     };
 
     checkCloudSubscription();
-
-    // Кеш на 1 час (3600000 мс)
-    const CACHE_TTL = 3600000;
-    const CACHE_KEY_VERSION = 'github_shm_version';
-    const CACHE_KEY_STARS = 'github_shm_stars';
-    const CACHE_KEY_TIMESTAMP = 'github_shm_timestamp';
-
-    const getCachedData = (key: string) => {
-      try {
-        return localStorage.getItem(key);
-      } catch {
-        return null;
-      }
-    };
-
-    const setCachedData = (key: string, value: string) => {
-      try {
-        localStorage.setItem(key, value);
-      } catch {
-      }
-    };
-
-    const isCacheValid = () => {
-      const timestamp = getCachedData(CACHE_KEY_TIMESTAMP);
-      if (!timestamp) return false;
-      const age = Date.now() - parseInt(timestamp, 10);
-      return age < CACHE_TTL;
-    };
-
-    // Проверяем кеш
-    if (isCacheValid()) {
-      const cachedStars = getCachedData(CACHE_KEY_STARS);
-
-      if (cachedStars) setStars(parseInt(cachedStars, 10));
-    } else {
-      // Загрузка версии из GitHub tags
-      fetch('https://api.github.com/repos/danuk/shm/tags')
-        .then(res => res.json())
-        .then(data => {
-          const validTags = data.filter((tag: any) => tag.name !== 'delete');
-          if (validTags.length > 0) {
-            const newVersion = validTags[0].name;
-            setCachedData(CACHE_KEY_VERSION, newVersion);
-            setCachedData(CACHE_KEY_TIMESTAMP, Date.now().toString());
-          }
-        });
-
-      // Загрузка звезд с GitHub
-      fetch('https://api.github.com/repos/danuk/shm')
-        .then(res => res.json())
-        .then(data => {
-          const newStars = data.stargazers_count;
-          setStars(newStars);
-          setCachedData(CACHE_KEY_STARS, newStars.toString());
-        })
-        .catch(() => {
-          const cachedStars = getCachedData(CACHE_KEY_STARS);
-          setStars(cachedStars ? parseInt(cachedStars, 10) : null);
-        });
-    }
 
     const handleOpenTemplate = (event: any) => {
       setSelectedData(event.detail);
@@ -668,6 +606,18 @@ function Layout() {
           </div>
           <div className="flex items-center gap-2">
             <a
+              href="https://docs.myshm.ru/docs/contribution/donation/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm transition-all"
+              style={{
+                color: 'var(--theme-content-text-muted)'
+              }}
+              title="Спонсорство"
+            >
+              <Heart className="w-5 h-5" />
+            </a>
+            <a
               href="https://t.me/shm_billing"
               target="_blank"
               rel="noopener noreferrer"
@@ -680,21 +630,6 @@ function Layout() {
               <Send className="w-5 h-5" />
             </a>
             <VersionBadge />
-            {stars !== null && (
-              <a
-                href="https://github.com/danuk/shm"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm transition-all"
-                style={{
-                  color: 'var(--theme-content-text-muted)'
-                }}
-              >
-                <Github className="w-5 h-5" />
-                <span>{stars}</span>
-                <Star className="w-5 h-5" />
-              </a>
-            )}
             <ThemeToggle />
             <button
               onClick={handleLogout}

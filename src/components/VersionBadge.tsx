@@ -2,28 +2,18 @@ import { useEffect, useState } from 'react';
 import { getVersion, VersionInfo } from '../lib/version';
 import toast from 'react-hot-toast';
 import {
-  Calendar,
-  Tag,
   GithubIcon,
   Copy,
   X,
-  Hash
+  Send,
+  Heart,
 } from 'lucide-react';
 
 export function VersionBadge() {
   const [version, setVersion] = useState<VersionInfo | null>(null);
   const [isOpen, setIsOpen] = useState(false);
-  const [hasNewerVersion, setHasNewerVersion] = useState(false);
-  const [newerVersion, setNewerVersion] = useState('');
-
   useEffect(() => {
     getVersion().then(setVersion);
-
-    // Проверяем наличие новой версии
-    const hasNewer = sessionStorage.getItem('hasNewerVersion') === 'true';
-    const newer = sessionStorage.getItem('newerVersion') || '';
-    setHasNewerVersion(hasNewer);
-    setNewerVersion(newer);
   }, []);
 
   const handleCopy = (value: any) => {
@@ -42,13 +32,7 @@ export function VersionBadge() {
           className="text-xm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center gap-1"
           title="Информация о версии"
         >
-          {version.backend.version}
-          {hasNewerVersion && (
-            <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-            </span>
-          )}
+          <span className="hidden sm:inline">v:{version.frontend.version}</span>
         </button>
       </div>
 
@@ -81,34 +65,12 @@ export function VersionBadge() {
               </div>
 
               <div className="space-y-4 text-sm">
-                {hasNewerVersion && (
-                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
-                    <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="font-semibold">Доступна новая версия: {newerVersion}</span>
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <div className="text-gray-500 dark:text-gray-400 mb-1">Версия
-                  <button
-                    onClick={() => handleCopy(version.backend.version)}
-                    className="self-end px-3 rounded items-center gap-2 text-sm"
-                   >
-                    <Copy className="w-3 h-3" />
-                  </button></div>
-                  <div className="font-mono font-semibold text-base">{version.backend.version}</div>
-                </div>
-
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                   <div className="grid grid-cols-2 gap-4">
                     {version.backend.commitSha && (
                       <div>
                         <div className="text-gray-500 dark:text-gray-400 mb-2">
-                            Backend
+                            Backend version: {version.backend.version}
                             <button
                                 onClick={() => handleCopy(version.backend)}
                                 className="self-end px-3 rounded items-center gap-2 text-sm"
@@ -130,11 +92,6 @@ export function VersionBadge() {
                           ) : (
                             version.backend.commitSha
                           )}
-                          {version.backend.version && (
-                            <div className="mt-1 text-gray-500">
-                              Version: {version.backend.version}
-                            </div>
-                          )}
                           {version.backend.branch && (
                             <div className="mt-1 text-gray-500">
                               Branch: {version.backend.branch}
@@ -143,11 +100,10 @@ export function VersionBadge() {
                         </div>
                       </div>
                     )}
-
                     {version.frontend.commitSha && (
                       <div>
                         <div className="text-gray-500 dark:text-gray-400 mb-2">
-                            Frontend
+                            Frontend version: {version.frontend.version}
                             <button
                                 onClick={() => handleCopy(version.frontend)}
                                 className="self-end px-3 rounded items-center gap-2 text-sm"
@@ -169,11 +125,6 @@ export function VersionBadge() {
                           ) : (
                             version.frontend.commitSha
                           )}
-                          {version.frontend.version && (
-                            <div className="mt-1 text-gray-500">
-                              Version: {version.frontend.version}
-                            </div>
-                          )}
                           {version.frontend.branch && (
                             <div className="mt-1 text-gray-500">
                               Branch: {version.frontend.branch}
@@ -182,6 +133,37 @@ export function VersionBadge() {
                         </div>
                       </div>
                     )}
+                  </div>
+                </div>
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <div className="flex justify-center gap-4">
+                    <a
+                      href="https://docs.myshm.ru/docs/contribution/donation/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center gap-2 text-sm transition-colors"
+                    >
+                      <Heart className="w-4 h-4" />
+                      Спонсорство
+                    </a>
+                    <a
+                      href="https://t.me/shm_billing"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center gap-2 text-sm transition-colors"
+                    >
+                      <Send className="w-4 h-4" />
+                      Сообщество
+                    </a>
+                    <a
+                      href="https://github.com/danuk/shm"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-cyan-700 hover:bg-cyan-800 text-white rounded-lg flex items-center gap-2 text-sm transition-colors"
+                    >
+                      <GithubIcon className="w-4 h-4" />
+                      GitHub
+                    </a>
                   </div>
                 </div>
               </div>
