@@ -39,11 +39,15 @@ interface MenuItem {
   children?: { name: string; href: string }[];
 }
 
-const baseNavigation: MenuItem[] = [
+const navigation: MenuItem[] = [
   {
     name: 'Главная',
     href: '/',
     icon: Home
+  },
+  { name: 'Аналитика',
+    href: '/analytics',
+    icon: BarChart3
   },
   {
     name: 'Пользователи',
@@ -177,7 +181,7 @@ function Layout() {
   const { sidebarCollapsed, setSidebarCollapsed } = useSettingsStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openMenus, setOpenMenus] = useState<string[]>(() => {
-  const activeMenu = baseNavigation.find(item =>
+  const activeMenu = navigation.find(item =>
       item.children?.some(child => child.href === location.pathname)
     );
     return activeMenu ? [activeMenu.name] : [];
@@ -187,20 +191,9 @@ function Layout() {
   const [menuPosition, setMenuPosition] = useState<{ top: number } | null>(null);
   const [selectedData, setSelectedData] = useState<any>(null);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
-  const [hasCloudSub, setHasCloudSub] = useState<boolean>(() => {
-    return localStorage.getItem('cloud_sub') === 'active';
-  });
   const hoverTimeoutRef = useRef<number | null>(null);
 
   const showSwagger = import.meta.env.VITE_SHOW_SWAGGER === 'true';
-
-  const navigation: MenuItem[] = hasCloudSub
-    ? [
-        baseNavigation[0], // Главная
-        { name: 'Аналитика', href: '/analytics', icon: BarChart3 },
-        ...baseNavigation.slice(1)
-      ]
-    : baseNavigation;
 
   const menuItems = showSwagger
     ? [...navigation, { name: 'Swagger', href: '/swagger', icon: FileText }]
@@ -210,62 +203,14 @@ function Layout() {
     fetchBranding();
     applyTheme();
 
-    // Check cloud subscription status
-    const checkCloudSubscription = async () => {
-      try {
-        // Проверяем авторизацию в Cloud через API
-        const res = await shm_request('shm/v1/admin/cloud/user');
-        const userData = res.data || res;
-
-        const isValidUser = (Array.isArray(userData) && userData[0] !== null && userData[0].user_id);
-
-        if (isValidUser) {
-          localStorage.setItem('cloud_auth', 'authenticated');
-          try {
-            const response = await shm_request('shm/v1/admin/cloud/proxy/service/sub/get');
-            const data = response.data || response;
-            if (data.status === 'ACTIVE') {
-                localStorage.setItem('cloud_sub', 'active');
-                setHasCloudSub(true);
-            } else {
-              localStorage.removeItem('cloud_sub');
-              setHasCloudSub(false);
-            }
-          } catch (error) {
-            // If error (e.g. 404), subscription is not active
-            localStorage.removeItem('cloud_sub');
-            setHasCloudSub(false);
-          }
-        } else {
-          localStorage.removeItem('cloud_auth');
-          localStorage.removeItem('cloud_sub');
-          setHasCloudSub(false);
-        }
-      } catch {
-        // Не авторизован в Cloud
-        localStorage.removeItem('cloud_auth');
-        localStorage.removeItem('cloud_sub');
-        setHasCloudSub(false);
-      }
-    };
-
-    checkCloudSubscription();
-
     const handleOpenTemplate = (event: any) => {
       setSelectedData(event.detail);
       setTemplateModalOpen(true);
     };
 
-    const handleCloudSubChanged = () => {
-      const cloudSub = localStorage.getItem('cloud_sub');
-      setHasCloudSub(cloudSub === 'active');
-    };
-
     window.addEventListener('openTemplate', handleOpenTemplate);
-    window.addEventListener('cloudSubChanged', handleCloudSubChanged);
     return () => {
       window.removeEventListener('openTemplate', handleOpenTemplate);
-      window.removeEventListener('cloudSubChanged', handleCloudSubChanged);
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
       }

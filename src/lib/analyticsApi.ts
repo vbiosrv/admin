@@ -1,4 +1,5 @@
 import { shm_request, normalizeListResponse } from './shm_request';
+import toast from 'react-hot-toast';
 
 // Типы для разной гранулярности данных
 export interface TimelineDataDay {
@@ -215,10 +216,10 @@ export async function fetchAnalyticsReport(months: number = 6, noCache: boolean 
     if (normalized.data && normalized.data.length > 0) {
       return normalized.data[0] as AnalyticsReport;
     }
-
     throw new Error('No analytics data received');
-  } catch (error) {
-    console.error('Error fetching analytics:', error);
+  } catch (error: any) {
+    const message = error?.data?.error || error?.message || 'Ошибка загрузки аналитики';
+    toast.error(message);
     throw error;
   }
 }

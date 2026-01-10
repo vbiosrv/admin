@@ -73,9 +73,7 @@ function Analytics() {
     try {
       const data = await fetchAnalyticsReport(period, noCache);
       setAnalytics(data);
-    } catch (error) {
-      toast.error('Ошибка загрузки аналитики');
-      console.error(error);
+      toast.success('Данные обновлены');
     } finally {
       setLoading(false);
     }
@@ -88,7 +86,6 @@ function Analytics() {
   const handleRefresh = async () => {
     await clearAnalyticsCache();
     await fetchData(true);
-    toast.success('Данные обновлены');
   };
 
   // Определяем гранулярность данных из API
