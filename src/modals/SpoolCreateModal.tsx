@@ -237,8 +237,8 @@ export default function SpoolCreateModal({
             </label>
             <div className="flex-1">
                 <UserSelect
-                value={formData.user_id}
-                onChange={(userId) => handleChange('user_id', userId)}
+                value={formData.settings?.user_id}
+                onChange={(userId) => handleSettingsChange('user_id', userId)}
                 readonly={!!defaultUserId}
                 />
             </div>
