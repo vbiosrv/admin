@@ -68,7 +68,6 @@ export async function getVersion(): Promise<VersionInfo> {
     }
     return versionCache!;
   } catch (error) {
-    console.error('Failed to load version info:', error);
     // Return default version info
     return {
         backend: {

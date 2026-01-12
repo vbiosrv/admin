@@ -32,7 +32,7 @@ export function VersionBadge() {
           className="text-xm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center gap-1"
           title="Информация о версии"
         >
-          <span className="hidden sm:inline">v:{version.frontend.version}</span>
+          v:{version.frontend.version}
         </button>
       </div>
 
