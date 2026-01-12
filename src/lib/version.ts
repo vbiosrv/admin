@@ -45,7 +45,7 @@ export async function getVersion(): Promise<VersionInfo> {
   }
 
   try {
-    const response = await fetch('/version.json');
+    const response = await fetch('version.json');
     if (!response.ok) {
       throw new Error('Failed to fetch version info');
     }
