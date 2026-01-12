@@ -73,7 +73,9 @@ function Analytics() {
     try {
       const data = await fetchAnalyticsReport(period, noCache);
       setAnalytics(data);
-      toast.success('Данные обновлены');
+      if (data) {
+        toast.success('Данные обновлены');
+      }
     } finally {
       setLoading(false);
     }

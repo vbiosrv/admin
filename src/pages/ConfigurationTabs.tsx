@@ -897,7 +897,7 @@ function ConfigurationTabs() {
           <Shield className="w-4 h-4" />
           <span className="hidden sm:inline">Безопасность</span>
         </button>
-        {CloudAuth !== null && (
+        {CloudAuth !== null ? (
           <Link
             to="/payment-systems"
             className="px-4 py-2 border-b-2 transition-colors flex items-center gap-2 no-underline"
@@ -909,7 +909,20 @@ function ConfigurationTabs() {
             <CreditCard className="w-4 h-4" />
           <span className="hidden sm:inline">Платежные системы</span>
           </Link>
-        )}
+        ) : (
+          <Link
+            to="/cloud"
+            className="px-4 py-2 border-b-2 transition-colors flex items-center gap-2 no-underline"
+            style={{
+              borderColor: 'var(--theme-card-border)',
+              color: 'var(--theme-content-text)'
+            }}
+          >
+            <CreditCard className="w-4 h-4" />
+          <span className="hidden sm:inline">Платежные системы</span>
+          </Link>
+        )
+        }
         <button
           onClick={() => setActiveTab('all')}
           className="px-4 py-2 border-b-2 transition-colors flex items-center gap-2"

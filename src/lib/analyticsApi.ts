@@ -202,7 +202,7 @@ export interface AnalyticsReport {
   };
 }
 
-export async function fetchAnalyticsReport(months: number = 6, noCache: boolean = false): Promise<AnalyticsReport> {
+export async function fetchAnalyticsReport(months: number = 6, noCache: boolean = false): Promise<AnalyticsReport | null> {
   try {
     const params = new URLSearchParams();
     params.set('months', months.toString());
@@ -216,11 +216,17 @@ export async function fetchAnalyticsReport(months: number = 6, noCache: boolean 
     if (normalized.data && normalized.data.length > 0) {
       return normalized.data[0] as AnalyticsReport;
     }
-    throw new Error('No analytics data received');
+    return null;
   } catch (error: any) {
     const message = error?.data?.error || error?.message || 'Ошибка загрузки аналитики';
+
+    if (message.includes('подписки')) {
+      toast.error(message);
+      return null;
+    }
+
     toast.error(message);
-    throw error;
+    return null;
   }
 }
 
