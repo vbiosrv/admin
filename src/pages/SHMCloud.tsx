@@ -99,18 +99,11 @@ function SHMCloud() {
       toast.success('Успешная авторизация');
       setLoginData({ login: '', password: '' });
     } catch (error: any) {
+      const errorMessage = error.data?.error || error.message || 'Ошибка авторизации';
 
-      let errorData;
-      try {
-        errorData = typeof error.message === 'string' ? JSON.parse(error.message) : error;
-      } catch {
-        errorData = error;
-      }
-
-      if (errorData.error === 'Login from this IP is prohibited') {
+      if (errorMessage === 'Login from this IP is prohibited') {
         setShowIpResetModal(true);
       } else {
-        const errorMessage = errorData.error || error.error || error.data?.error || 'Ошибка авторизации';
         toast.error(errorMessage);
       }
     }
