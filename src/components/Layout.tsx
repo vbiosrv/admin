@@ -515,7 +515,7 @@ function Layout() {
             })}
           </nav>
             <a
-              href="https://node1.vbios.ru"
+              href="https://node1.vbshost.ru"
               target="_blank"
               rel="noopener noreferrer"
               className="px-2 py-2"
@@ -551,7 +551,7 @@ function Layout() {
           </div>
           <div className="flex items-center gap-2">
             <a
-              href="https://node1.vbios.ru"
+              href="https://node1.vbshost.ru"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm transition-all"
