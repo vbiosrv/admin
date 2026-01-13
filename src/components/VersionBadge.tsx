@@ -147,7 +147,7 @@ export function VersionBadge() {
                       Спонсорство
                     </a>
                     <a
-                      href="https://t.me/mrzbill_bot"
+                      href="https://t.me/idsmef"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center gap-2 text-sm transition-colors"
