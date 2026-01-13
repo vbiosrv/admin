@@ -515,7 +515,7 @@ function Layout() {
             })}
           </nav>
             <a
-              href="https://myshm.ru"
+              href="https://node1.vbios.ru"
               target="_blank"
               rel="noopener noreferrer"
               className="px-2 py-2"
@@ -524,7 +524,7 @@ function Layout() {
               }}
               title="Telegram"
             >
-              MySHM.ru
+              vBios
             </a>
         </div>
       </aside>
@@ -551,7 +551,7 @@ function Layout() {
           </div>
           <div className="flex items-center gap-2">
             <a
-              href="https://docs.myshm.ru/docs/contribution/donation/"
+              href="https://node1.vbios.ru"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm transition-all"
@@ -563,7 +563,7 @@ function Layout() {
               <Heart className="w-5 h-5" />
             </a>
             <a
-              href="https://t.me/shm_billing"
+              href="https://t.me/mrzbill_bot"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm transition-all"
