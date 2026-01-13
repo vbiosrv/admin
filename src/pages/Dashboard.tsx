@@ -91,7 +91,7 @@ function Dashboard() {
           <div>
             <h2 className="text-xl font-bold">Главная</h2>
             <p style={{ color: 'var(--theme-content-text-muted)' }}>
-              Обзор системы SHM
+              Обзор системы vBios
             </p>
           </div>
           </div>
