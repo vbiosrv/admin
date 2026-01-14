@@ -95,7 +95,7 @@ const navigation: MenuItem[] = [
       { name: 'Шаблоны', href: '/templates' },
       { name: 'Конфигурация', href: '/configuration' },
         {
-    name: 'SHM Cloud',
+    name: 'vBios Cloud',
     href: '/cloud',
     icon: Cloud
   },
