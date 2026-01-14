@@ -47,7 +47,7 @@ function Users() {
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [filterMode, setFilterMode] = useState<'like' | 'exact'>('like');
 
-  const { setSelectedUser } = useSelectedUserStore();
+  const { addSelectedUser } = useSelectedUserStore();
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
@@ -93,7 +93,7 @@ function Users() {
   }, []);
 
   const handleRowClick = (row: any) => {
-    setSelectedUser(row);
+    addSelectedUser(row);
     navigate(`/users/${row.user_id}`);
   };
 
