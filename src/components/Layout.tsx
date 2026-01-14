@@ -94,12 +94,12 @@ const navigation: MenuItem[] = [
     children: [
       { name: 'Шаблоны', href: '/templates' },
       { name: 'Конфигурация', href: '/configuration' },
-    ]
-  },
-  {
+        {
     name: 'SHM Cloud',
     href: '/cloud',
     icon: Cloud
+  },
+    ]
   },
 ];
 
