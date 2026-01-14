@@ -73,8 +73,8 @@ jobs:
             BACKEND_COMMIT_URL=${{ steps.backend.outputs.url }}
             BACKEND_REPO=${{ steps.backend.outputs.repo }}
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/shm-admin:${{ steps.version.outputs.minor }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/shm-admin:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/admin:${{ steps.version.outputs.minor }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/admin:latest
           cache-from: type=gha
           platforms: linux/amd64,linux/arm64
           cache-to: type=gha,mode=max
