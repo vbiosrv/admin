@@ -74,14 +74,7 @@ jobs:
           # Форматирование тела сообщения - убираем markdown из changelog для безопасности
           SAFE_BODY=$(echo "$BODY" | sed 's/[_*\[\]()~`>#+=|{}.!-]/\\&/g')
 
-          MESSAGE="$EMOJI *$ESCAPED_RELEASE_TYPE $ESCAPED_TAG_NAME*
-
-📦 *Репозиторий:* $ESCAPED_REPO_NAME
-
-📋 *Changelog:*
-$SAFE_BODY
-
-🔗 [Посмотреть релиз]($REPO_URL/releases/tag/$TAG_NAME)"
+          MESSAGE="${EMOJI} *${ESCAPED_RELEASE_TYPE} ${ESCAPED_TAG_NAME}*\n\n📦 *Репозиторий:* ${ESCAPED_REPO_NAME}\n\n📋 *Changelog:*\n${SAFE_BODY}\n\n🔗 [Посмотреть релиз](${REPO_URL}/releases/tag/${TAG_NAME})"
 
           # Escape the message for JSON
           MESSAGE=$(echo "$MESSAGE" | sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/"/\\"/g')
