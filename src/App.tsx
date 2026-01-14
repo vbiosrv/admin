@@ -6,6 +6,7 @@ import { useAuthStore } from './store/authStore';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Users from './pages/Users';
+import UserEdit from './pages/UserEdit';
 import Services from './pages/Services';
 import UserServices from './pages/UserServices';
 import Withdraws from './pages/Withdraws';
@@ -102,6 +103,7 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="users" element={<Users />} />
+          <Route path="users/:userId" element={<UserEdit />} />
           <Route path="profiles" element={<Profiles />} />
           <Route path="user-services" element={<UserServices />} />
           <Route path="withdraws" element={<Withdraws />} />

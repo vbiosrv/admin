@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import DataTable, { SortDirection } from '../components/DataTable';
-import { UserModal, UserCreateModal, UserChangePasswordModal} from '../modals';
+import { UserCreateModal } from '../modals';
 import Help from '../components/Help';
 import { shm_request, normalizeListResponse } from '../lib/shm_request';
 import { buildApiFilters, appendFilterToUrl } from '../lib/filterUtils';
@@ -35,6 +36,7 @@ const userColumns = [
 ];
 
 function Users() {
+  const navigate = useNavigate();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
@@ -47,10 +49,7 @@ function Users() {
 
   const { setSelectedUser } = useSelectedUserStore();
 
-  const [selectedRow, setSelectedRow] = useState<any>(null);
-  const [editModalOpen, setEditModalOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [changePasswordModalOpen, setChangePasswordModalOpen] = useState(false);
 
   const fetchData = useCallback((l: number, o: number, f: Record<string, string>, fm: 'like' | 'exact', sf?: string, sd?: SortDirection) => {
     setLoading(true);
@@ -94,77 +93,32 @@ function Users() {
   }, []);
 
   const handleRowClick = (row: any) => {
-    setSelectedRow(row);
-    setEditModalOpen(true);
     setSelectedUser(row);
+    navigate(`/users/${row.user_id}`);
   };
 
   const handleCreate = () => {
     setCreateModalOpen(true);
   };
 
-  const handleChangePasswordOpen = () => {
-    setChangePasswordModalOpen(true);
-  };
 
-  const handleCliLogin = async () => {
-    if (!selectedRow?.user_id) {
-      toast.error('Не удалось получить user_id');
-      return;
-    }
-
-    try {
-      const configRes = await shm_request('shm/v1/admin/config/cli');
-      const { data: configItems } = normalizeListResponse(configRes);
-
-      if (!configItems || configItems.length === 0) {
-        toast.error('Не удалось получить URL');
-        return;
-      }
-
-      const cliUrl = configItems[0].url;
-      const sessionRes = await shm_request('shm/v1/admin/user/session', {
-        method: 'PUT',
-        body: JSON.stringify({ user_id: selectedRow.user_id }),
-      });
-      const sessionId = sessionRes.id;
-      window.open(`${cliUrl}${createApiUrl('shm/user/auth.cgi')}?session_id=${sessionId}`, '_blank');
-    } catch (error) {
-      toast.error('Не удалось открыть ссылку');
-    }
-  };
 
   const handleSaveNew = async (userData: any) => {
-    await shm_request('shm/v1/admin/user', {
-      method: 'PUT',
-      body: JSON.stringify(userData),
-    });
-    fetchData(limit, offset, filters, filterMode, sortField, sortDirection);
+    try {
+      await shm_request('shm/v1/admin/user', {
+        method: 'PUT',
+        body: JSON.stringify(userData),
+      });
+      toast.success('Пользователь успешно создан');
+      // Обновляем данные после создания
+      fetchData(limit, offset, filters, filterMode, sortField, sortDirection);
+    } catch (error) {
+      toast.error('Ошибка создания пользователя');
+      throw error;
+    }
   };
 
-  const handleSaveEdit = async (userData: any) => {
-    await shm_request('shm/v1/admin/user', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
-    fetchData(limit, offset, filters, filterMode, sortField, sortDirection);
-  };
 
-  const handleChangePassword = async (userId: number, password: string) => {
-    await shm_request('shm/v1/admin/user/passwd', {
-      method: 'POST',
-      body: JSON.stringify({ user_id: userId, password }),
-    });
-  };
-
-  const handleDelete = async () => {
-    if (!selectedRow?.user_id) return;
-
-    await shm_request(`shm/v1/admin/user?user_id=${selectedRow.user_id}`, {
-      method: 'DELETE',
-    });
-    fetchData(limit, offset, filters, filterMode, sortField, sortDirection);
-  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -201,32 +155,10 @@ function Users() {
         storageKey="users"
       />
 
-      {}
-      <UserModal
-        open={editModalOpen}
-        onClose={() => setEditModalOpen(false)}
-        data={selectedRow}
-        onSave={handleSaveEdit}
-        onDelete={handleDelete}
-        onChangePassword={handleChangePasswordOpen}
-        onCliLogin={handleCliLogin}
-        onRefresh={() => fetchData(limit, offset, filters, filterMode, sortField, sortDirection)}
-      />
-
-      {}
       <UserCreateModal
         open={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
         onSave={handleSaveNew}
-      />
-
-      {}
-      <UserChangePasswordModal
-        open={changePasswordModalOpen}
-        onClose={() => setChangePasswordModalOpen(false)}
-        userId={selectedRow?.user_id}
-        userLogin={selectedRow?.login}
-        onSave={handleChangePassword}
       />
     </div>
   );
