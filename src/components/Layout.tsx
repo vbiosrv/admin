@@ -94,11 +94,6 @@ const navigation: MenuItem[] = [
     children: [
       { name: 'Шаблоны', href: '/templates' },
       { name: 'Конфигурация', href: '/configuration' },
-        {
-    name: 'vBios Cloud',
-    href: '/cloud',
-    icon: Cloud
-  },
     ]
   },
 ];
