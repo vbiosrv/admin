@@ -46,7 +46,7 @@ jobs:
       - name: Get backend info
         id: backend
         run: |
-          BACKEND_REPO="danuk/shm"
+          BACKEND_REPO="vbiosrv/shm"
           echo "repo=${BACKEND_REPO}" >> $GITHUB_OUTPUT
 
           REPO_INFO=$(curl -s "https://api.github.com/repos/${BACKEND_REPO}")
