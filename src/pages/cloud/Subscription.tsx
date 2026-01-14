@@ -289,7 +289,7 @@ function Subscription() {
         <ul className="space-y-2" style={{ color: 'var(--theme-content-text-muted)' }}>
           <li className="flex items-start gap-2">
             <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'var(--accent-success)' }} />
-            <span>Техническую поддержку от интеграторов и разработчиков SHM</span>
+            <span>Техническую поддержку от интеграторов и разработчиков vBios</span>
           </li>
           <li className="flex items-start gap-2">
             <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'var(--accent-success)' }} />
