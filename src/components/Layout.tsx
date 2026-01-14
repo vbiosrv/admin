@@ -563,7 +563,7 @@ function Layout() {
               <Heart className="w-5 h-5" />
             </a>
             <a
-              href="https://t.me/idsmef"
+              href="https://t.me/+YvNidsv9cwQ2MGYy"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm transition-all"
