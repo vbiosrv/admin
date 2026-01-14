@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../components/Modal';
 import { Save, X } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -11,12 +11,14 @@ interface ServerCreateModalProps {
   open: boolean;
   onClose: () => void;
   onSave: (data: Record<string, any>) => void | Promise<void>;
+  initialData?: Record<string, any> | null;
 }
 
 export default function ServerCreateModal({
   open,
   onClose,
   onSave,
+  initialData,
 }: ServerCreateModalProps) {
   const [formData, setFormData] = useState<Record<string, any>>({
     name: '',
@@ -30,6 +32,38 @@ export default function ServerCreateModal({
   const [saving, setSaving] = useState(false);
   const [mode, setMode] = useState<'template' | 'cmd'>('template');
   const [transport, setTransport] = useState<string>('');
+
+  useEffect(() => {
+    if (open) {
+      if (initialData) {
+        setFormData({
+          name: initialData.name || '',
+          enabled: initialData.enabled ?? 1,
+          host: initialData.host || '',
+          server_gid: initialData.server_gid,
+          settings: initialData.settings || { max_services: 0 },
+        });
+        setTransport(initialData.server?.transport || '');
+        if (initialData.settings?.cmd) {
+          setMode('cmd');
+        } else {
+          setMode('template');
+        }
+      } else {
+        setFormData({
+          name: '',
+          enabled: 1,
+          host: '',
+          server_gid: undefined,
+          settings: {
+            max_services: 0,
+          },
+        });
+        setMode('template');
+        setTransport('');
+      }
+    }
+  }, [open, initialData]);
 
   const handleChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -80,19 +114,6 @@ export default function ServerCreateModal({
       }
 
       await onSave(dataToSave);
-
-      setFormData({
-        name: '',
-        enabled: 1,
-        host: '',
-        server_gid: undefined,
-        settings: {
-          max_services: 0,
-        },
-      });
-      setMode('template');
-      setTransport('');
-
       onClose();
       toast.success('Сервер создан');
     } catch (error) {
@@ -147,7 +168,7 @@ export default function ServerCreateModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Создание сервера"
+      title={initialData ? `Дублирование: ${initialData.name}` : "Создание сервера"}
       footer={renderFooter()}
       size="xl"
     >

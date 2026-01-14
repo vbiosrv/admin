@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../components/Modal';
 import ConfirmModal from '../components/ConfirmModal';
 import Console from '../components/Console';
-import { Save, X, Trash2, Terminal, Play, Mail } from 'lucide-react';
+import { Save, X, Trash2, Terminal, Play, Mail, Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ServerGroupSelect from '../components/ServerGroupSelect';
 import TemplateSelect from '../components/TemplateSelect';
@@ -16,6 +16,7 @@ interface ServerModalProps {
   data: Record<string, any> | null;
   onSave: (data: Record<string, any>) => void | Promise<void>;
   onDelete?: (id: number) => void | Promise<void>;
+  onDuplicate?: (data: Record<string, any>) => void;
 }
 
 export default function ServerModal({
@@ -24,6 +25,7 @@ export default function ServerModal({
   data,
   onSave,
   onDelete,
+  onDuplicate,
 }: ServerModalProps) {
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
@@ -221,6 +223,21 @@ export default function ServerModal({
         )}
       </div>
       <div className="flex gap-2 flex-wrap justify-end">
+        {data?.server_id && onDuplicate && (
+          <button
+            onClick={() => onDuplicate(formData)}
+            className="p-2 rounded flex items-center gap-2"
+            style={{
+              backgroundColor: 'var(--theme-button-secondary-bg)',
+              color: 'var(--theme-button-secondary-text)',
+              border: '1px solid var(--theme-button-secondary-border)',
+            }}
+            title="Дублировать"
+          >
+            <Copy className="w-4 h-4" />
+            <span className="hidden sm:inline">Дублировать</span>
+          </button>
+        )}
         {/* TEST SSH */}
         {transport === 'ssh' && (
           <button
