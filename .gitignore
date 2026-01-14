@@ -20,5 +20,4 @@ public/version.json
 *~
 .cache
 .temp
-/.github
 vite.config-s.ts
