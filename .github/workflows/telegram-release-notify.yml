@@ -66,8 +66,30 @@ jobs:
             RELEASE_TYPE="Релиз"
           fi
 
+          # Получение коммитов для релиза
+          echo "Получение списка коммитов..."
+
+          # Получаем предыдущий тег
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -n "$PREVIOUS_TAG" ]; then
+            # Получаем коммиты между предыдущим и текущим тегом
+            COMMITS=$(git log --pretty=format:"• %s" ${PREVIOUS_TAG}..HEAD 2>/dev/null || echo "")
+          else
+            # Если предыдущего тега нет, получаем все коммиты
+            COMMITS=$(git log --pretty=format:"• %s" HEAD 2>/dev/null || echo "")
+          fi
+
+          # Ограничиваем количество коммитов (последние 100)
+          if [ -n "$COMMITS" ]; then
+            COMMITS=$(echo "$COMMITS" | head -100)
+            COMMITS_SECTION="\n\n🔧 Изменения в коде:\n$COMMITS"
+          else
+            COMMITS_SECTION=""
+          fi
+
           # Форматирование сообщения (используем plain text без Markdown)
-          MESSAGE="${EMOJI} ${RELEASE_TYPE} ${TAG_NAME}\n\n📦 Репозиторий: ${REPO_NAME}\n\n📋 Changelog:\n${BODY}\n\n🔗 Посмотреть релиз: ${REPO_URL}/releases/tag/${TAG_NAME}"
+          MESSAGE="${EMOJI} ${RELEASE_TYPE} ${TAG_NAME}\n\n📦 Репозиторий: ${REPO_NAME}\n\n📋 Changelog:\n${BODY}${COMMITS_SECTION}\n\n🔗 Посмотреть релиз: ${REPO_URL}/releases/tag/${TAG_NAME}"
 
           # Escape the message for JSON
           MESSAGE=$(echo "$MESSAGE" | sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/"/\\"/g')
