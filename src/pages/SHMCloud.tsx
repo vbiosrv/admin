@@ -207,7 +207,7 @@ function SHMCloud() {
             style={{ color: 'var(--theme-content-text)' }}
           >
             <Cloud className="w-7 h-7" style={{ color: 'var(--theme-primary-color)' }} />
-            SHM Cloud
+            vBios Cloud
           </h1>
         </div>
 
