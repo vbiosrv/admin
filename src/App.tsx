@@ -24,9 +24,9 @@ import ServerGroups from './pages/ServerGroups';
 import Identities from './pages/Identities';
 import SpoolHistory from './pages/SpoolHistory';
 import SHMCloud from './pages/SHMCloud';
-import Subscription from './pages/Subscription';
-import PaymentSystems from './pages/PaymentSystems';
-import CurrencyConverter from './pages/CurrencyConverter';
+import Subscription from './pages/cloud/Subscription';
+import PaymentSystems from './pages/cloud/PaymentSystems';
+import CurrencyConverter from './pages/cloud/CurrencyConverter';
 import ConfigurationTabs from './pages/ConfigurationTabs';
 import NotFound from './pages/NotFound';
 
