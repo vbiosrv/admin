@@ -258,13 +258,13 @@ export const DynamicPaymentForm: React.FC<DynamicPaymentFormProps> = ({
       <div className="flex gap-3 pt-4">
         <button
           type="submit"
-          className="flex-1 px-4 py-2 rounded font-medium btn-success"
+          className={`flex-1 px-4 py-2 rounded font-medium ${existingData && existingData.need_update_to ? 'btn-warning' : 'btn-success'}`}
           style={{
-            backgroundColor: 'var(--accent-primary)',
-            color: 'var(--accent-text)',
+            backgroundColor: existingData && existingData.need_update_to ? 'var(--accent-warning)' : 'var(--accent-primary)',
+            color: existingData && existingData.need_update_to ? 'var(--accent-warning-text)' : 'var(--accent-text)',
           }}
         >
-          Сохранить
+          {existingData && existingData.need_update_to ? `Обновить до ${existingData.need_update_to}` : 'Сохранить'}
         </button>
         <button
           type="button"

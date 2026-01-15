@@ -57,6 +57,9 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({ op
       const currentConfig = configResponse.data?.[0] || {};
 
       if (currentConfig[system.name]) {
+        if ( system.is_need_update ) {
+            currentConfig[system.name].need_update_to = system.version;
+        }
         setExistingData(currentConfig[system.name]);
       }
 
@@ -100,6 +103,10 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({ op
       const systemConfig: any = {
         ...formData,
       };
+
+      if ( existingData.need_update_to ) {
+        systemConfig.need_update_to = existingData.need_update_to;
+      }
 
       if (formData.weight) systemConfig.weight = Number(formData.weight);
       if (formData.lifetime) systemConfig.lifetime = Number(formData.lifetime);
