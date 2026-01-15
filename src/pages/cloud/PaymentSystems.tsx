@@ -14,6 +14,7 @@ function PaymentSystems() {
   const [selectedSystem, setSelectedSystem] = useState<PaymentSystem | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [sortType, setSortType] = useState<SortType>('alpha');
+  const [configData, setConfigData] = useState<any>(null);
 
   const cardStyles = {
     backgroundColor: 'var(--theme-card-bg)',
@@ -22,19 +23,30 @@ function PaymentSystems() {
   };
 
   useEffect(() => {
-    loadPaymentSystems();
+    const loadAll = async () => {
+      setLoading(true);
+      await Promise.all([loadPaymentSystems(), loadConfig()]);
+      setLoading(false);
+    };
+    loadAll();
   }, []);
 
   const loadPaymentSystems = async () => {
-    setLoading(true);
     try {
       const response = await shm_request('shm/v1/admin/cloud/proxy/service/paysystems/list');
       const systems = Array.isArray(response.data) ? response.data : (Array.isArray(response) ? response : []);
       setPaymentSystems(systems);
     } catch (error) {
       toast.error('Ошибка загрузки платежных систем');
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const loadConfig = async () => {
+    try {
+      const res = await shm_request('shm/v1/admin/config/pay_systems');
+      setConfigData(res.data[0]);
+    } catch {
+      setConfigData(null);
     }
   };
 
@@ -167,13 +179,21 @@ function PaymentSystems() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        {sortedSystems.map((system) => (
+        {sortedSystems.map((system) => {
+          system.is_need_update = (system.price == 0 || system.paid) && system.version && configData[system.name] && !configData[system.name].need_update_to && configData[system.name].version !== system.version;
+          return (
           <div
             key={system.name}
-            className="rounded-lg border p-6 cursor-pointer transition-all hover:shadow-lg hover:scale-105"
+            className="rounded-lg border p-6 cursor-pointer transition-all hover:shadow-lg hover:scale-105 relative"
             style={cardStyles}
             onClick={() => handleSystemClick(system)}
           >
+            {system.is_need_update && (
+              <span className="absolute top-2 right-2 px-2 py-1 rounded bg-yellow-200 text-yellow-900 text-xs font-semibold z-10" title="Доступна новая версия">
+                Обновить
+              </span>
+            )}
+
             <div className="flex items-center gap-3 mb-4">
               <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--theme-input-bg)' }}>
                 <CreditCard className="w-6 h-6" style={{ color: 'var(--accent-primary)' }} />
@@ -205,7 +225,8 @@ function PaymentSystems() {
               </div>
             ) : undefined }
           </div>
-        ))}
+        );
+        })}
       </div>
 
       {paymentSystems.length === 0 && (
