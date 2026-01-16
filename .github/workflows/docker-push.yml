@@ -67,7 +67,7 @@ jobs:
           push: true
           build-args: |
             FRONTEND_VERSION=${{ steps.version.outputs.full }}
-            FRONTEND_BRANCH=${{ github.ref_name }}
+            FRONTEND_BRANCH=main
             BACKEND_COMMIT_SHA=${{ steps.backend.outputs.sha }}
             BACKEND_BRANCH=${{ steps.backend.outputs.branch }}
             BACKEND_COMMIT_URL=${{ steps.backend.outputs.url }}
