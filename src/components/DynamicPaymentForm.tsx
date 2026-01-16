@@ -157,6 +157,9 @@ export const DynamicPaymentForm: React.FC<DynamicPaymentFormProps> = ({
               className="w-full px-3 py-2 rounded border"
               style={inputStyles}
             >
+              {!field.required && (
+                <option value="">— Не выбрано —</option>
+              )}
               {field.options?.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}

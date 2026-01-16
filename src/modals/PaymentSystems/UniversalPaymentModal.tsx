@@ -11,6 +11,8 @@ export interface PaymentSystem {
   infoMessage?: string;
   price?: number;
   paid?: boolean;
+  version?: string;
+  is_need_update?: boolean;
   fields: PaymentFieldSchema[];
 }
 
