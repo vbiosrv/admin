@@ -1,0 +1,104 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    tags:
+      - '*'
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: danuk/shm
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch full history for git describe
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Extract version info
+      id: version
+      run: |
+        # Get the tag name
+        TAG=${GITHUB_REF#refs/tags/}
+        echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
+        # Get minor version (1.2 from 1.2.3)
+        VERSION_MINOR=$(echo $TAG | cut -d '.' -f 1,2)
+        echo "minor=${VERSION_MINOR}" >> $GITHUB_OUTPUT
+
+        # Get git revision
+        REV=$(git rev-parse --short HEAD)
+        echo "rev=${REV}" >> $GITHUB_OUTPUT
+
+        # Create version string
+        VERSION_STRING="${TAG}-${REV}"
+        echo "version_string=${VERSION_STRING}" >> $GITHUB_OUTPUT
+
+        echo "Building version: ${VERSION_STRING}"
+
+    - name: Create version.json
+      run: |
+        cat > public/version.json << EOF
+        {
+            "version": "${{ steps.version.outputs.version_string }}",
+            "commitSha": "${{ github.sha }}",
+            "releaseUrl": "https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag }}"
+        }
+        EOF
+        cat public/version.json
+
+    - name: Build and push Admin image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64
+        push: true
+        target: admin
+        tags: |
+          ${{ env.IMAGE_NAME }}-admin:${{ steps.version.outputs.tag }}
+          ${{ env.IMAGE_NAME }}-admin:${{ steps.version.outputs.minor }}
+          ${{ env.IMAGE_NAME }}-admin:latest
+        cache-from: type=gha,scope=admin
+        cache-to: type=gha,mode=max,scope=admin
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.tag }}
+        name: Release ${{ steps.version.outputs.tag }}
+        generate_release_notes: true
+        body: |
+          ## Docker Image Built
+
+          ### Admin Image
+          - `${{ env.IMAGE_NAME }}-admin:${{ steps.version.outputs.tag }}`
+          - `${{ env.IMAGE_NAME }}-admin:${{ steps.version.outputs.minor }}`
+          - `${{ env.IMAGE_NAME }}-admin:latest`
+
+          **Version:** `${{ steps.version.outputs.version_string }}`
+          **Git Revision:** `${{ steps.version.outputs.rev }}`
+
+          ## What's Changed
+
+          *Changelog will be generated automatically below based on commits and pull requests.*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

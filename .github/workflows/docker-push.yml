@@ -1,9 +1,6 @@
 name: Docker Push
 
 on:
-  push:
-    tags:
-      - '*'
   workflow_dispatch:
 
 jobs:
@@ -15,6 +12,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -24,14 +24,10 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Get tag name
+      - name: Get version info
         id: version
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
-          else
-            TAG=${GITHUB_REF_NAME}
-          fi
+          TAG=${GITHUB_REF_NAME}
           REV=$(git rev-parse --short HEAD)
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
           echo "rev=${REV}" >> $GITHUB_OUTPUT
@@ -43,38 +39,25 @@ jobs:
             echo "minor=${TAG}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Get backend info
-        id: backend
+      - name: Create version.json
         run: |
-          BACKEND_REPO="danuk/shm"
-          echo "repo=${BACKEND_REPO}" >> $GITHUB_OUTPUT
+          cat > public/version.json << EOF
+          {
+              "version": "${{ steps.version.outputs.full }}",
+              "commitSha": "${{ github.sha }}",
+              "releaseUrl": "https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag }}"
+          }
+          EOF
+          cat public/version.json
 
-          REPO_INFO=$(curl -s "https://api.github.com/repos/${BACKEND_REPO}")
-          BACKEND_BRANCH=$(echo "$REPO_INFO" | jq -r '.default_branch // "master"')
-          echo "branch=${BACKEND_BRANCH}" >> $GITHUB_OUTPUT
-
-          BACKEND_INFO=$(curl -s "https://api.github.com/repos/${BACKEND_REPO}/commits/${BACKEND_BRANCH}")
-          BACKEND_SHA=$(echo "$BACKEND_INFO" | jq -r '.sha // "unknown"')
-          BACKEND_URL="https://github.com/${BACKEND_REPO}/commit/${BACKEND_SHA}"
-
-          echo "sha=${BACKEND_SHA}" >> $GITHUB_OUTPUT
-          echo "url=${BACKEND_URL}" >> $GITHUB_OUTPUT
-
-      - name: Build and push
+      - name: Build and push Admin
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          build-args: |
-            FRONTEND_VERSION=${{ steps.version.outputs.full }}
-            FRONTEND_BRANCH=main
-            BACKEND_COMMIT_SHA=${{ steps.backend.outputs.sha }}
-            BACKEND_BRANCH=${{ steps.backend.outputs.branch }}
-            BACKEND_COMMIT_URL=${{ steps.backend.outputs.url }}
-            BACKEND_REPO=${{ steps.backend.outputs.repo }}
+          target: admin
+          platforms: linux/amd64,linux/arm64
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/shm-admin:${{ steps.version.outputs.minor }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/shm-admin:latest
-          cache-from: type=gha
-          platforms: linux/amd64,linux/arm64
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=admin
+          cache-to: type=gha,mode=max,scope=admin

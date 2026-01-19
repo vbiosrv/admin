@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getVersion, VersionInfo } from '../lib/version';
-import toast from 'react-hot-toast';
+import { showGlobalToast } from './Toast';
 import {
   GithubIcon,
   Copy,
@@ -19,7 +19,7 @@ export function VersionBadge() {
   const handleCopy = (value: any) => {
     const text = typeof value === 'object' ? JSON.stringify(value) : String(value);
     navigator.clipboard.writeText(text);
-    toast.success('Скопировано');
+    showGlobalToast('Скопировано', 'success');
   };
 
   if (!version) return null;
@@ -67,72 +67,50 @@ export function VersionBadge() {
               <div className="space-y-4 text-sm">
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                   <div className="grid grid-cols-2 gap-4">
-                    {version.backend.commitSha && (
-                      <div>
-                        <div className="text-gray-500 dark:text-gray-400 mb-2">
-                            Backend version: {version.backend.version}
-                            <button
-                                onClick={() => handleCopy(version.backend)}
-                                className="self-end px-3 rounded items-center gap-2 text-sm"
-                            >
-                                <Copy className="w-3 h-3" />
-                            </button>
-                        </div>
-                        <div className="font-mono text-xs bg-gray-100 dark:bg-gray-900 p-2 rounded break-all">
+                    <div>
+                      <div className="text-gray-500 dark:text-gray-400 mb-2">
+                          Backend version: {version.backend.version || 'N/A'}
+                          <button
+                              onClick={() => handleCopy(version.backend)}
+                              className="self-end px-3 rounded items-center gap-2 text-sm"
+                          >
+                              <Copy className="w-3 h-3" />
+                          </button>
+                      </div>
+                      <div className="font-mono text-xs bg-gray-100 dark:bg-gray-900 p-2 rounded break-all">
                         <GithubIcon className="inline-block mr-1 mb-0.5 w-4 h-4 text-gray-400" />
-                        {version.backend.commitUrl ? (
-                            <a
-                              href={version.backend.commitUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 dark:text-blue-400 hover:underline"
-                            >
-                              {version.backend.commitSha}
-                            </a>
-                          ) : (
-                            version.backend.commitSha
-                          )}
-                          {version.backend.branch && (
-                            <div className="mt-1 text-gray-500">
-                              Branch: {version.backend.branch}
-                            </div>
-                          )}
-                        </div>
+                          <a
+                            href={version.backend.releaseUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 dark:text-blue-400 hover:underline"
+                          >
+                            {version.backend.commitSha || 'N/A'}
+                          </a>
                       </div>
-                    )}
-                    {version.frontend.commitSha && (
-                      <div>
-                        <div className="text-gray-500 dark:text-gray-400 mb-2">
-                            Frontend version: {version.frontend.version}
-                            <button
-                                onClick={() => handleCopy(version.frontend)}
-                                className="self-end px-3 rounded items-center gap-2 text-sm"
-                            >
-                                <Copy className="w-3 h-3" />
-                            </button>
-                        </div>
-                        <div className="font-mono text-xs bg-gray-100 dark:bg-gray-900 p-2 rounded break-all">
-                          <GithubIcon className="inline-block mr-1 mb-0.5 w-4 h-4 text-gray-400" />
-                          {version.frontend.commitUrl ? (
-                            <a
-                              href={version.frontend.commitUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 dark:text-blue-400 hover:underline"
-                            >
-                              {version.frontend.commitSha}
-                            </a>
-                          ) : (
-                            version.frontend.commitSha
-                          )}
-                          {version.frontend.branch && (
-                            <div className="mt-1 text-gray-500">
-                              Branch: {version.frontend.branch}
-                            </div>
-                          )}
-                        </div>
+                    </div>
+                    <div>
+                      <div className="text-gray-500 dark:text-gray-400 mb-2">
+                          Frontend version: {version.frontend.version || 'N/A'}
+                          <button
+                              onClick={() => handleCopy(version.frontend)}
+                              className="self-end px-3 rounded items-center gap-2 text-sm"
+                          >
+                              <Copy className="w-3 h-3" />
+                          </button>
                       </div>
-                    )}
+                      <div className="font-mono text-xs bg-gray-100 dark:bg-gray-900 p-2 rounded break-all">
+                        <GithubIcon className="inline-block mr-1 mb-0.5 w-4 h-4 text-gray-400" />
+                          <a
+                            href={version.frontend.releaseUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 dark:text-blue-400 hover:underline"
+                          >
+                            {version.frontend.commitSha || 'N/A'}
+                          </a>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
