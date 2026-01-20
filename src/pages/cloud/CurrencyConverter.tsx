@@ -129,7 +129,7 @@ function CurrencyConverter() {
   };
 
   const calculateFinalRate = (currency: CurrencyWithChanges): number => {
-    const baseRate = currency.value;
+    const baseRate = currency.value ?? 0;
 
     if (!currency.addition_type) {
       return baseRate;
@@ -428,7 +428,7 @@ function CurrencyConverter() {
                       className="px-4 py-3 text-center"
                       style={{ color: 'var(--theme-content-text)' }}
                     >
-                      {currency.value.toFixed(4)}
+                      {(currency.value ?? 0).toFixed(4)}
                     </td>
                     <td
                       className="px-4 py-3 text-center font-semibold"
