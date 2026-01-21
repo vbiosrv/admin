@@ -133,8 +133,8 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({ op
       } else if (!isClone) {
         onClose();
       }
-    } catch (error) {
-      if (error && error.stack) {
+    } catch (error: unknown) {
+      if (error instanceof Error && error.stack) {
         console.error('Ошибка сохранения настроек:', error.stack, error);
       } else {
         console.error('Ошибка сохранения настроек:', error);
@@ -178,11 +178,8 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({ op
     }
 
     try {
-      await shm_request('shm/v1/admin/config/pay_systems', {
-        method: 'POST',
-        body: JSON.stringify({
-          [cloneKey]: null
-        }),
+      await shm_request(`shm/v1/admin/config/pay_systems?value=${cloneKey}`, {
+        method: 'DELETE',
       });
 
       toast.success('Копия удалена');
