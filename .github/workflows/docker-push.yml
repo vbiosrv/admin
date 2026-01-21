@@ -58,6 +58,8 @@ jobs:
           target: admin
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/vbios-admin:${{ steps.version.outputs.minor }}
+           ${{ env.IMAGE_NAME }}-admin:${{ steps.version.outputs.tag }}
+           ${{ env.IMAGE_NAME }}-admin:${{ steps.version.outputs.minor }}
+           ${{ env.IMAGE_NAME }}-admin:latest
           cache-from: type=gha,scope=admin
           cache-to: type=gha,mode=max,scope=admin
