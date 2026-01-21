@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: docker.io
-  IMAGE_NAME: idsmef/shm
+  IMAGE_NAME: idsmef/vbios
 
 jobs:
   build:
