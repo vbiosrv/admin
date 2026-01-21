@@ -18,7 +18,7 @@ interface BrandingState {
 
 const DEFAULT_BRANDING: BrandingSettings = {
   name: 'SHM Admin',
-  logoUrl: '',
+  logoUrl: 'favicon.jpg',
 };
 
 export const useBrandingStore = create<BrandingState>((set, get) => ({
