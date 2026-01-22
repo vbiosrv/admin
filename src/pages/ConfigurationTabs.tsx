@@ -20,9 +20,11 @@ type TabType = 'general' | 'branding' | 'telegram' | 'security' | 'payment' | 'a
 
 interface TelegramBot {
   token: string;
-  secret?: string;
-  template_id?: string;
+  secret?: string | null;
+  template_id?: string | null;
   webhook_set?: boolean;
+  description?: string | null;
+  chat_id?: string | null;
 }
 
 interface PasskeyCredential {
@@ -138,6 +140,8 @@ function ConfigurationTabs() {
   const [newBotToken, setNewBotToken] = useState('');
   const [newBotSecret, setNewBotSecret] = useState('');
   const [newBotTemplate, setNewBotTemplate] = useState<string | null>('');
+  const [newBotDescription, setNewBotDescription] = useState('');
+  const [newBotChatId, setNewBotChatId] = useState('');
   const [showNewBotForm, setShowNewBotForm] = useState(false);
 
   // Модальное окно редактирования бота
@@ -146,12 +150,61 @@ function ConfigurationTabs() {
   const [editBotToken, setEditBotToken] = useState('');
   const [editBotSecret, setEditBotSecret] = useState('');
   const [editBotTemplate, setEditBotTemplate] = useState<string | null>('');
+  const [editBotDescription, setEditBotDescription] = useState('');
+  const [editBotChatId, setEditBotChatId] = useState('');
 
   // Модальное окно установки вебхука
   const [webhookModalOpen, setWebhookModalOpen] = useState(false);
   const [webhookUrl, setWebhookUrl] = useState('');
   const [webhookBotName, setWebhookBotName] = useState('');
   const [webhookBotData, setWebhookBotData] = useState<TelegramBot | null>(null);
+  const [webhookAllowedUpdates, setWebhookAllowedUpdates] = useState<string[]>([
+    'message',
+    'inline_query',
+    'callback_query',
+    'pre_checkout_query',
+    'my_chat_member',
+  ]);
+  const [getUpdatesResult, setGetUpdatesResult] = useState<any>(null);
+  const [getUpdatesLoading, setGetUpdatesLoading] = useState(false);
+  const [getUpdatesError, setGetUpdatesError] = useState('');
+  const [testMessageLoading, setTestMessageLoading] = useState(false);
+  const [testMessageResult, setTestMessageResult] = useState<any>(null);
+
+  // Все доступные типы обновлений Telegram с описаниями
+  const allTelegramUpdates = [
+    { key: 'message', label: 'message', description: 'Новые входящие сообщения (текст, фото, стикеры и т.д.)' },
+    { key: 'inline_query', label: 'inline_query', description: 'Inline-запросы (@bot запрос)' },
+    { key: 'callback_query', label: 'callback_query', description: 'Нажатия на inline-кнопки (callback buttons)' },
+    { key: 'my_chat_member', label: 'my_chat_member', description: 'Изменение статуса бота в чате (добавлен, удалён, заблокирован)' },
+    { key: 'pre_checkout_query', label: 'pre_checkout_query', description: 'Запрос перед оплатой (подтверждение платежа)' },
+    { key: 'edited_message', label: 'edited_message', description: 'Отредактированные сообщения' },
+    { key: 'channel_post', label: 'channel_post', description: 'Новые посты в каналах, где бот является администратором' },
+    { key: 'edited_channel_post', label: 'edited_channel_post', description: 'Отредактированные посты в каналах' },
+    { key: 'business_connection', label: 'business_connection', description: 'Подключение/отключение бизнес-аккаунта к боту' },
+    { key: 'business_message', label: 'business_message', description: 'Новые сообщения от бизнес-аккаунта' },
+    { key: 'edited_business_message', label: 'edited_business_message', description: 'Отредактированные сообщения бизнес-аккаунта' },
+    { key: 'deleted_business_messages', label: 'deleted_business_messages', description: 'Удалённые сообщения бизнес-аккаунта' },
+    { key: 'message_reaction', label: 'message_reaction', description: 'Реакция на сообщение была изменена пользователем' },
+    { key: 'message_reaction_count', label: 'message_reaction_count', description: 'Изменение счётчика анонимных реакций' },
+    { key: 'chosen_inline_result', label: 'chosen_inline_result', description: 'Результат inline-запроса, выбранный пользователем' },
+    { key: 'shipping_query', label: 'shipping_query', description: 'Запрос информации о доставке (платежи)' },
+    { key: 'poll', label: 'poll', description: 'Изменение состояния опроса (новые голоса, закрытие)' },
+    { key: 'poll_answer', label: 'poll_answer', description: 'Ответ пользователя на неанонимный опрос' },
+    { key: 'chat_member', label: 'chat_member', description: 'Изменение статуса участника чата (требует явного запроса)' },
+    { key: 'chat_join_request', label: 'chat_join_request', description: 'Запрос на вступление в чат' },
+    { key: 'chat_boost', label: 'chat_boost', description: 'Буст чата был добавлен или изменён' },
+    { key: 'removed_chat_boost', label: 'removed_chat_boost', description: 'Буст чата был удалён' },
+    { key: 'purchased_paid_media', label: 'purchased_paid_media', description: 'Пользователь купил платный медиа-контент' },
+  ];
+
+  const defaultAllowedUpdates = [
+    'message',
+    'inline_query',
+    'callback_query',
+    'pre_checkout_query',
+    'my_chat_member',
+  ];
 
   // DataTable состояния для вкладки "Все настройки"
   const [tableData, setTableData] = useState<any[]>([]);
@@ -272,9 +325,12 @@ function ConfigurationTabs() {
           setCompanyName(item.value?.name || '');
           setLogoUrl(item.value?.logoUrl || '');
         } else if (item.key === 'telegram') {
-          // Отделяем xtr_exchange_rate от ботов
-          const { xtr_exchange_rate, ...bots } = item.value || {};
+          // Отделяем xtr_exchange_rate и webhook_url от ботов
+          const { xtr_exchange_rate, webhook_url, ...bots } = item.value || {};
           setTelegramBots(bots || {});
+          if (webhook_url) {
+            setWebhookUrl(webhook_url);
+          }
         } else if (item.key === '_shm') {
           setCloudAuth(item.value?.cloud?.auth || null);
         } else if (item.key === 'otp') {
@@ -658,35 +714,42 @@ function ConfigurationTabs() {
     return secret;
   };
 
-  const addNewBot = async () => {
-    if (!newBotTemplate) {
-      toast.error('Выберите шаблон');
-      return;
-    }
+  // Проверка что строка содержит только латиницу, цифры и подчёркивание
+  const isValidBotName = (name: string) => /^[a-zA-Z0-9_-]+$/.test(name);
 
+  const addNewBot = async () => {
     if (!newBotName || !newBotToken) {
       toast.error('Заполните имя и токен бота');
       return;
     }
 
-    // Проверяем, существует ли уже бот с таким template_id
-    if (telegramBots[newBotTemplate]) {
-      toast.error(`Бот с названием "${newBotTemplate}" уже существует`);
+    if (!isValidBotName(newBotName)) {
+      toast.error('Название бота должно содержать только латиницу, цифры, подчёркивание и дефис');
+      return;
+    }
+
+    // Проверяем, существует ли уже бот с таким именем
+    if (telegramBots[newBotName]) {
+      toast.error(`Бот с названием "${newBotName}" уже существует`);
       return;
     }
 
     const secret = newBotSecret || generateSecret();
 
-    await saveTelegramBot(newBotTemplate, {
+    await saveTelegramBot(newBotName, {
       token: newBotToken,
       secret,
-      template_id: newBotTemplate || newBotName,
+      template_id: newBotTemplate || null,
       webhook_set: false,
+      chat_id: newBotChatId || null,
+      description: newBotDescription || null,
     });
     setNewBotName('');
     setNewBotToken('');
     setNewBotSecret('');
     setNewBotTemplate('');
+    setNewBotDescription('');
+    setNewBotChatId('');
     setShowNewBotForm(false);
   };
 
@@ -694,8 +757,9 @@ function ConfigurationTabs() {
     setEditingBotName(botName);
     setEditBotToken(bot.token);
     setEditBotSecret(bot.secret || '');
-    // Сохраняем реальный template_id если он присутствует, иначе используем ключ
-    setEditBotTemplate(bot.template_id || botName);
+    setEditBotTemplate(bot.template_id || '');
+    setEditBotDescription(bot.description || '');
+    setEditBotChatId(bot.chat_id || '');
     setEditBotModalOpen(true);
   };
 
@@ -705,18 +769,13 @@ function ConfigurationTabs() {
       return;
     }
 
-    const newKey = editBotTemplate || editingBotName;
-
-    // Если template_id изменился, удаляем старый ключ
-    if (newKey !== editingBotName) {
-      await saveTelegramBot(editingBotName, null);
-    }
-
-    await saveTelegramBot(newKey, {
+    await saveTelegramBot(editingBotName, {
       token: editBotToken,
-      secret: editBotSecret || undefined,
-      template_id: editBotTemplate || editingBotName,
+      secret: editBotSecret || null,
+      template_id: editBotTemplate || null,
+      description: editBotDescription || null,
       webhook_set: telegramBots[editingBotName]?.webhook_set || false,
+      chat_id: editBotChatId || null,
     });
     setEditBotModalOpen(false);
   };
@@ -731,6 +790,7 @@ function ConfigurationTabs() {
     if (!confirmed) return;
 
     await DeleteConfigItem('telegram', botName);
+    setEditBotModalOpen(false);
   };
 
   const updateBotToken = async (botName: string, token: string) => {
@@ -754,41 +814,175 @@ function ConfigurationTabs() {
         return;
       }
 
+      const requestBody: any = {
+        url: url,
+        secret: bot.secret,
+        token: bot.token,
+        template_id: bot.template_id,
+        allowed_updates: webhookAllowedUpdates,
+        tg_profile: botName,
+      };
+
       const response = await shm_request('shm/v1/telegram/set_webhook', {
         method: 'POST',
-        body: JSON.stringify({
-          url: url,
-          secret: bot.secret,
-          token: bot.token,
-          template_id: bot.template_id,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (response.ok && response.result) {
-        // Обновляем webhook_set в конфиге
-        if (bot.template_id) {
-          await saveTelegramBot(bot.template_id, {
+        // Обновляем webhook_set в конфиге и сохраняем webhook URL
+        await saveConfigItem('telegram', {
+          ...telegramBots,
+          [botName]: {
             ...bot,
             webhook_set: true,
-          });
-        }
-        toast.success(response.description || `Вебхук для бота "${bot.template_id}" установлен`);
+          },
+          webhook_url: url,
+        });
+
+        // Обновляем локальное состояние
+        setTelegramBots(prev => ({
+          ...prev,
+          [botName]: {
+            ...prev[botName],
+            webhook_set: true,
+          },
+        }));
+
+        toast.success(response.description || `Вебхук для бота "${botName}" установлен`);
         setWebhookModalOpen(false);
         if (fromModal) {
           await loadConfig();
         }
       } else {
-        toast.error('Ошибка установки вебхука');
+        const errorMsg = response.description || JSON.stringify(response, null, 2);
+        toast.error(`Ошибка установки вебхука: ${errorMsg}`);
       }
     } catch (error) {
-      toast.error('Ошибка установки вебхука');
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      toast.error(`Ошибка установки вебхука: ${errorMsg}`);
+    }
+  };
+
+  const getUpdates = async (token: string) => {
+    if (!token) {
+      setGetUpdatesError('Токен не указан');
+      return;
+    }
+
+    setGetUpdatesLoading(true);
+    setGetUpdatesError('');
+    setGetUpdatesResult(null);
+
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${token}/getUpdates`);
+      const data = await response.json();
+      setGetUpdatesResult(data);
+      if (!data.ok) {
+        setGetUpdatesError(data.description || 'Ошибка при получении обновлений');
+      }
+    } catch (error: any) {
+      setGetUpdatesError(error.message || 'Ошибка сети');
+    } finally {
+      setGetUpdatesLoading(false);
+    }
+  };
+
+  const sendTestMessage = async (token: string, chatId: string) => {
+    if (!token) {
+      toast.error('Токен бота не указан');
+      return;
+    }
+    if (!chatId) {
+      toast.error('chat_id не указан');
+      return;
+    }
+
+    setTestMessageLoading(true);
+    setTestMessageResult(null);
+
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: '🤖 Тестовое сообщение от SHM Admin\n\nЕсли вы получили это сообщение, значит настройка работает корректно!',
+        }),
+      });
+
+      const data = await response.json();
+      setTestMessageResult(data);
+
+      if (data.ok) {
+        toast.success('Тестовое сообщение успешно отправлено!');
+      } else {
+        const errorMsg = data.description || JSON.stringify(data, null, 2);
+        toast.error(`Ошибка отправки сообщения: ${errorMsg}`);
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      toast.error(`Ошибка отправки сообщения: ${errorMsg}`);
+      console.error(error);
+    } finally {
+      setTestMessageLoading(false);
+    }
+  };
+
+  const deleteWebhook = async (botName: string, token: string) => {
+    if (!token) {
+      toast.error('Токен бота не указан');
+      return;
+    }
+
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${token}/deleteWebhook?drop_pending_updates=True`);
+      const data = await response.json();
+
+      if (data.ok) {
+        // Обновляем статус webhook_set в конфигурации
+        try {
+          await saveConfigItem('telegram', {
+            [botName]: {
+              ...telegramBots[botName],
+              webhook_set: false,
+            }
+          });
+          toast.success('Вебхук успешно удален');
+          // Обновляем локальное состояние
+          setTelegramBots(prev => ({
+            ...prev,
+            [botName]: {
+              ...prev[botName],
+              webhook_set: false,
+            },
+          }));
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          toast.error(`Ошибка обновления конфигурации: ${errorMsg}`);
+        }
+      } else {
+        const errorMsg = data.description || JSON.stringify(data, null, 2);
+        toast.error(`Ошибка при удалении вебхука: ${errorMsg}`);
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      toast.error(`Ошибка при удалении вебхука: ${errorMsg}`);
+      console.error(error);
     }
   };
 
   const openWebhookModal = (botName: string, bot: TelegramBot) => {
     setWebhookBotName(botName);
     setWebhookBotData(bot);
-    setWebhookUrl(apiUrl);
+    // Используем сохраненный webhook URL, если он есть, иначе apiUrl
+    if (!webhookUrl) {
+      setWebhookUrl(apiUrl);
+    }
+    setWebhookAllowedUpdates([...defaultAllowedUpdates]);
+    setGetUpdatesResult(null);
+    setGetUpdatesError('');
     setWebhookModalOpen(true);
   };
 
@@ -1368,17 +1562,21 @@ https://t.me/Name_bot?start=USER_ID
                 style={cardStyles}
                 onClick={() => openEditBotModal(botName, bot)}
               >
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-2">
                   <h3 className="text-base font-semibold flex items-center gap-2 truncate" style={{ color: 'var(--theme-content-text)' }}>
                     <Bot className="w-4 h-4 flex-shrink-0" />
                     <span className="truncate">{botName}</span>
                   </h3>
                 </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between py-2">
-                    <span className="text-xs font-medium" style={{ color: 'var(--theme-content-text-muted)' }}>
-                      Вебхук
+                {bot.description && (
+                  <p className="text-xs mb-3 truncate" style={{ color: 'var(--theme-content-text-muted)' }}>
+                    {bot.description}
+                  </p>
+                )}
+                {bot.webhook_set && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-xs" style={{ color: 'var(--theme-content-text-muted)' }}>
+                      Вебхук:
                     </span>
                     <span
                       className="px-2 py-0.5 rounded text-xs font-medium"
@@ -1387,10 +1585,10 @@ https://t.me/Name_bot?start=USER_ID
                         color: 'white',
                       }}
                     >
-                      {bot.webhook_set ? 'Установлен' : 'Не установлен'}
+                      Установлен
                     </span>
                   </div>
-                </div>
+                )}
               </div>
             ))}
           </div>
@@ -1410,80 +1608,110 @@ https://t.me/Name_bot?start=USER_ID
               <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--theme-content-text)' }}>
                 Новый Telegram бот
               </h3>
-              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--accent-warning)' }}>
-                Имя бота и название шаблона должны совпадать для корректной работы Telegram бота
-              </label>
               <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
-                    Шаблон <span style={{ color: 'var(--accent-warning)' }}>*</span>
-                  </label>
-                    <TemplateSelect
-                    value={newBotTemplate}
-                    onChange={(id) => {
-                      setNewBotTemplate(id);
-                      if (id) {
-                        setNewBotName(id);
-                      }
-                    }}
-                    className="flex-1"
-                    placeholder="Выберите шаблон"
-                    />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
-                    Название бота (Профиль - только латиница)
-                  </label>
-                  <input
-                    type="text"
-                    value={newBotName}
-                    onChange={(e) => setNewBotName(e.target.value)}
-                    placeholder="Выберите шаблон"
-                    className="w-full px-3 py-2 rounded border"
-                    style={{
-                      ...inputStyles,
-                      opacity: 0.6,
-                      cursor: 'not-allowed',
-                    }}
-                    disabled
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
-                    Токен бота
-                  </label>
-                  <input
-                    type="text"
-                    value={newBotToken}
-                    onChange={(e) => setNewBotToken(e.target.value)}
-                    placeholder="123456:ABC-DEF1234..."
-                    className="w-full px-3 py-2 rounded border font-mono text-sm"
-                    style={inputStyles}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
-                    Секретный ключ для вебхука
-                  </label>
-                  <div className="flex gap-3">
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
+                      Название бота (Профиль) <span style={{ color: 'var(--accent-warning)' }}>*</span>
+                    </label>
                     <input
                       type="text"
-                      value={newBotSecret}
-                      onChange={(e) => setNewBotSecret(e.target.value)}
-                      placeholder="Автоматически сгенерируется"
-                      className="flex-1 px-3 py-2 rounded border font-mono text-sm"
+                      value={newBotName}
+                      onChange={(e) => {
+                        // Разрешаем только латиницу, цифры, подчёркивания и дефисы
+                        const value = e.target.value.replace(/[^a-zA-Z0-9_-]/g, '');
+                        setNewBotName(value);
+                      }}
+                      placeholder="my_bot-profile"
+                      className="w-full px-3 py-2 rounded border"
                       style={inputStyles}
                     />
-                    <button
-                      onClick={() => setNewBotSecret(generateSecret())}
-                      className="px-4 py-2 rounded flex items-center gap-2 whitespace-nowrap"
-                      style={{
-                        backgroundColor: 'var(--theme-button-secondary-bg)',
-                        color: 'var(--theme-button-secondary-text)',
-                      }}
-                    >
-                      Сгенерировать
-                    </button>
+                    <p className="text-xs mt-1" style={{ color: 'var(--theme-content-text-muted)' }}>
+                      Только латиница, цифры, подчёркивание и дефис
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
+                      Шаблон
+                    </label>
+                      <TemplateSelect
+                      value={newBotTemplate}
+                      onChange={(id) => setNewBotTemplate(id)}
+                      className="flex-1"
+                      placeholder="Выберите шаблон (опционально)"
+                      />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
+                      Описание
+                    </label>
+                    <input
+                      type="text"
+                      value={newBotDescription}
+                      onChange={(e) => setNewBotDescription(e.target.value)}
+                      placeholder="Описание бота"
+                      className="w-full px-3 py-2 rounded border"
+                      style={inputStyles}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
+                      chat_id
+                    </label>
+                    <input
+                      type="text"
+                      value={newBotChatId}
+                      onChange={(e) => setNewBotChatId(e.target.value)}
+                      placeholder="1234567890 или -1001234567890"
+                      className="w-full px-3 py-2 rounded border font-mono text-sm"
+                      style={inputStyles}
+                    />
+                    <p className="text-xs mt-1" style={{ color: 'var(--theme-content-text-muted)' }}>
+                      chat_id используется для отправки сообщений от бота в определённый чат или канал.
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
+                      Токен бота <span style={{ color: 'var(--accent-warning)' }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={newBotToken}
+                      onChange={(e) => setNewBotToken(e.target.value)}
+                      placeholder="123456:ABC-DEF1234..."
+                      className="w-full px-3 py-2 rounded border font-mono text-sm"
+                      style={inputStyles}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
+                      Секретный ключ для вебхука
+                    </label>
+                    <div className="flex gap-3">
+                      <input
+                        type="text"
+                        value={newBotSecret}
+                        onChange={(e) => setNewBotSecret(e.target.value)}
+                        placeholder="Автоматически сгенерируется"
+                        className="flex-1 px-3 py-2 rounded border font-mono text-sm"
+                        style={inputStyles}
+                      />
+                      <button
+                        onClick={() => setNewBotSecret(generateSecret())}
+                        className="px-4 py-2 rounded flex items-center gap-2 whitespace-nowrap"
+                        style={{
+                          backgroundColor: 'var(--theme-button-secondary-bg)',
+                          color: 'var(--theme-button-secondary-text)',
+                        }}
+                      >
+                        Сгенерировать
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div className="flex gap-3">
@@ -1505,6 +1733,8 @@ https://t.me/Name_bot?start=USER_ID
                       setNewBotToken('');
                       setNewBotSecret('');
                       setNewBotTemplate('');
+                      setNewBotDescription('');
+                      setNewBotChatId('');
                     }}
                     className="px-4 py-2 rounded"
                     style={{
@@ -1601,6 +1831,60 @@ https://t.me/Name_bot?start=USER_ID
             </div>
 
             <div className="space-y-4">
+              {/* Описание */}
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
+                  Описание
+                </label>
+                <input
+                  type="text"
+                  value={editBotDescription}
+                  onChange={(e) => setEditBotDescription(e.target.value)}
+                  className="w-full px-3 py-2 rounded border"
+                  style={inputStyles}
+                  placeholder="Описание бота"
+                />
+              </div>
+
+              {/* Chat ID */}
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
+                  chat_id
+                </label>
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    value={editBotChatId}
+                    onChange={(e) => setEditBotChatId(e.target.value)}
+                    className="flex-1 px-3 py-2 rounded border font-mono text-sm"
+                    style={inputStyles}
+                    placeholder="1234567890 или -1001234567890"
+                  />
+                  <button
+                    onClick={() => sendTestMessage(editBotToken, editBotChatId)}
+                    disabled={testMessageLoading || !editBotToken || !editBotChatId}
+                    className="px-4 py-2 rounded flex items-center justify-center gap-2 whitespace-nowrap"
+                    style={{
+                      backgroundColor: testMessageLoading || !editBotToken || !editBotChatId ? 'var(--theme-button-secondary-bg)' : 'var(--accent-primary)',
+                      color: testMessageLoading || !editBotToken || !editBotChatId ? 'var(--theme-button-secondary-text)' : 'var(--accent-text)',
+                      opacity: testMessageLoading || !editBotToken || !editBotChatId ? 0.6 : 1,
+                      cursor: testMessageLoading || !editBotToken || !editBotChatId ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {testMessageLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      </>
+                    ) : (
+                      'Тест'
+                    )}
+                  </button>
+                </div>
+                <p className="text-xs mt-1" style={{ color: 'var(--theme-content-text-muted)' }}>
+                  chat_id используется для отправки сообщений от бота в определённый чат или канал.
+                </p>
+              </div>
+
               {/* Шаблон */}
               <div>
                 <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
@@ -1618,15 +1902,60 @@ https://t.me/Name_bot?start=USER_ID
                 <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
                   Токен бота
                 </label>
-                <input
-                  type="text"
-                  value={editBotToken}
-                  onChange={(e) => setEditBotToken(e.target.value)}
-                  className="w-full px-3 py-2 rounded border font-mono text-sm"
-                  style={inputStyles}
-                  placeholder="123456:ABC-DEF1234..."
-                />
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    value={editBotToken}
+                    onChange={(e) => setEditBotToken(e.target.value)}
+                    className="flex-1 px-3 py-2 rounded border font-mono text-sm"
+                    style={inputStyles}
+                    placeholder="123456:ABC-DEF1234..."
+                  />
+                  <button
+                    onClick={() => getUpdates(editBotToken)}
+                    disabled={getUpdatesLoading || !editBotToken}
+                    className="px-4 py-2 rounded flex items-center justify-center gap-2 whitespace-nowrap"
+                    style={{
+                      backgroundColor: getUpdatesLoading || !editBotToken ? 'var(--theme-button-secondary-bg)' : 'var(--accent-primary)',
+                      color: getUpdatesLoading || !editBotToken ? 'var(--theme-button-secondary-text)' : 'var(--accent-text)',
+                      opacity: getUpdatesLoading || !editBotToken ? 0.6 : 1,
+                      cursor: getUpdatesLoading || !editBotToken ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {getUpdatesLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      </>
+                    ) : (
+                      'getUpdates'
+                    )}
+                  </button>
+                </div>
               </div>
+
+              {/* getUpdates результат */}
+              {getUpdatesResult && (
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
+                    Результат getUpdates
+                  </label>
+                  <div
+                    className="p-3 rounded border font-mono text-xs max-h-48 overflow-y-auto"
+                    style={{
+                      backgroundColor: 'var(--theme-input-bg)',
+                      borderColor: getUpdatesError ? 'var(--accent-danger)' : 'var(--theme-input-border)',
+                      color: 'var(--theme-content-text)',
+                    }}
+                  >
+                    <pre>{JSON.stringify(getUpdatesResult, null, 2)}</pre>
+                  </div>
+                  {getUpdatesError && (
+                    <p className="text-xs mt-1" style={{ color: 'var(--accent-danger)' }}>
+                      ⚠️ {getUpdatesError}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Секретный ключ */}
               <div>
@@ -1655,42 +1984,59 @@ https://t.me/Name_bot?start=USER_ID
                 </div>
               </div>
 
-              {/* Статус вебхука */}
-              <div className="pt-2">
-                <div className="flex items-center gap-2 mb-3">
-                  <label className="block text-sm font-medium" style={{ color: 'var(--theme-content-text)' }}>
-                    Статус вебхука
-                  </label>
-                  <span
-                    className="px-2 py-0.5 rounded text-xs font-medium"
-                    style={{
-                      backgroundColor: telegramBots[editingBotName]?.webhook_set ? 'var(--accent-success)' : 'var(--accent-warning)',
-                      color: 'white',
-                    }}
-                  >
-                    {telegramBots[editingBotName]?.webhook_set ? 'Установлен' : 'Не установлен'}
-                  </span>
+              {/* Статус вебхука - показываем только если выбран шаблон */}
+              {editBotTemplate && (
+                <div className="pt-2">
+                  <div className="flex items-center gap-2 mb-3">
+                    <label className="block text-sm font-medium" style={{ color: 'var(--theme-content-text)' }}>
+                      Статус вебхука
+                    </label>
+                    <span
+                      className="px-2 py-0.5 rounded text-xs font-medium"
+                      style={{
+                        backgroundColor: telegramBots[editingBotName]?.webhook_set ? 'var(--accent-success)' : 'var(--accent-warning)',
+                        color: 'white',
+                      }}
+                    >
+                      {telegramBots[editingBotName]?.webhook_set ? 'Установлен' : 'Не установлен'}
+                    </span>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => {
+                        setEditBotModalOpen(false);
+                        openWebhookModal(editingBotName, {
+                          token: editBotToken,
+                          secret: editBotSecret,
+                          template_id: editBotTemplate || undefined,
+                          webhook_set: telegramBots[editingBotName]?.webhook_set,
+                        });
+                      }}
+                      className="flex-1 px-4 py-2 rounded flex items-center justify-center gap-2"
+                      style={{
+                        backgroundColor: 'var(--accent-primary)',
+                        color: 'var(--accent-text)',
+                      }}
+                    >
+                      <Bot className="w-4 h-4" />
+                      {telegramBots[editingBotName]?.webhook_set ? 'Переустановить вебхук' : 'Установить вебхук'}
+                    </button>
+                    {telegramBots[editingBotName]?.webhook_set && (
+                      <button
+                        onClick={() => deleteWebhook(editingBotName, editBotToken)}
+                        className="px-4 py-2 rounded flex items-center justify-center gap-2"
+                        style={{
+                          backgroundColor: 'var(--accent-danger)',
+                          color: 'white',
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Удалить вебхук
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <button
-                  onClick={() => {
-                    setEditBotModalOpen(false);
-                    openWebhookModal(editingBotName, {
-                      token: editBotToken,
-                      secret: editBotSecret,
-                      template_id: editBotTemplate || undefined,
-                      webhook_set: telegramBots[editingBotName]?.webhook_set,
-                    });
-                  }}
-                  className="w-full px-4 py-2 rounded flex items-center justify-center gap-2"
-                  style={{
-                    backgroundColor: 'var(--accent-primary)',
-                    color: 'var(--accent-text)',
-                  }}
-                >
-                  <Bot className="w-4 h-4" />
-                  {telegramBots[editingBotName]?.webhook_set ? 'Переустановить вебхук' : 'Установить вебхук'}
-                </button>
-              </div>
+              )}
 
               {/* Кнопки действий */}
               <div className="flex gap-3 pt-4 border-t" style={{ borderColor: 'var(--theme-card-border)' }}>
@@ -1728,7 +2074,7 @@ https://t.me/Name_bot?start=USER_ID
           onClick={() => setWebhookModalOpen(false)}
         >
           <div
-            className="rounded-lg border p-6 max-w-2xl w-full mx-4"
+            className="rounded-lg border p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
             style={cardStyles}
             onClick={(e) => e.stopPropagation()}
           >
@@ -1790,6 +2136,111 @@ https://t.me/Name_bot?start=USER_ID
                   style={inputStyles}
                 />
               </div>
+
+              {/* Allowed Updates */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium" style={{ color: 'var(--theme-content-text)' }}>
+                    Типы обновлений (allowed_updates)
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setWebhookAllowedUpdates([...defaultAllowedUpdates])}
+                      className="text-xs px-2 py-1 rounded"
+                      style={{
+                        backgroundColor: 'var(--theme-button-secondary-bg)',
+                        color: 'var(--theme-button-secondary-text)',
+                      }}
+                    >
+                      По умолчанию
+                    </button>
+                    <button
+                      onClick={() => setWebhookAllowedUpdates(allTelegramUpdates.map(u => u.key))}
+                      className="text-xs px-2 py-1 rounded"
+                      style={{
+                        backgroundColor: 'var(--theme-button-secondary-bg)',
+                        color: 'var(--theme-button-secondary-text)',
+                      }}
+                    >
+                      Выбрать все
+                    </button>
+                    <button
+                      onClick={() => setWebhookAllowedUpdates([])}
+                      className="text-xs px-2 py-1 rounded"
+                      style={{
+                        backgroundColor: 'var(--theme-button-secondary-bg)',
+                        color: 'var(--theme-button-secondary-text)',
+                      }}
+                    >
+                      Очистить
+                    </button>
+                  </div>
+                </div>
+                <div
+                  className="max-h-64 overflow-y-auto rounded border p-3 space-y-2"
+                  style={{
+                    backgroundColor: 'var(--theme-input-bg)',
+                    borderColor: 'var(--theme-input-border)',
+                  }}
+                >
+                  {allTelegramUpdates.map((update) => (
+                    <label
+                      key={update.key}
+                      className="flex items-start gap-2 cursor-pointer p-2 rounded hover:opacity-80"
+                      style={{ backgroundColor: webhookAllowedUpdates.includes(update.key) ? 'var(--accent-primary-transparent, rgba(59, 130, 246, 0.1))' : 'transparent' }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={webhookAllowedUpdates.includes(update.key)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setWebhookAllowedUpdates([...webhookAllowedUpdates, update.key]);
+                          } else {
+                            setWebhookAllowedUpdates(webhookAllowedUpdates.filter(u => u !== update.key));
+                          }
+                        }}
+                        className="mt-1 w-4 h-4 rounded"
+                        style={{ accentColor: 'var(--accent-primary)' }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-mono font-medium" style={{ color: 'var(--theme-content-text)' }}>
+                          {update.label}
+                        </span>
+                        <p className="text-xs mt-0.5" style={{ color: 'var(--theme-content-text-muted)' }}>
+                          {update.description}
+                        </p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs mt-1" style={{ color: 'var(--theme-content-text-muted)' }}>
+                  Выбрано: {webhookAllowedUpdates.length} из {allTelegramUpdates.length}
+                </p>
+              </div>
+
+              {/* getUpdates результат */}
+              {getUpdatesResult && (
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
+                    Результат getUpdates
+                  </label>
+                  <div
+                    className="p-3 rounded border font-mono text-xs max-h-64 overflow-y-auto"
+                    style={{
+                      backgroundColor: 'var(--theme-input-bg)',
+                      borderColor: getUpdatesError ? 'var(--accent-danger)' : 'var(--theme-input-border)',
+                      color: 'var(--theme-content-text)',
+                    }}
+                  >
+                    <pre>{JSON.stringify(getUpdatesResult, null, 2)}</pre>
+                  </div>
+                  {getUpdatesError && (
+                    <p className="text-xs mt-1" style={{ color: 'var(--accent-danger)' }}>
+                      ⚠️ {getUpdatesError}
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="flex gap-3 pt-4 border-t" style={{ borderColor: 'var(--theme-card-border)' }}>
                 <button
