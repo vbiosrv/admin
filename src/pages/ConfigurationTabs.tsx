@@ -805,20 +805,14 @@ function ConfigurationTabs() {
         return;
       }
 
-      // template_id - шаблон для обработки сообщений
-      // tg_profile - профиль бота (ключ в конфиге), передаётся если отличается от template_id
       const requestBody: any = {
         url: url,
         secret: bot.secret,
         token: bot.token,
-        template_id: bot.template_id || botName,
+        template_id: bot.template_id,
         allowed_updates: webhookAllowedUpdates,
+        tg_profile: botName,
       };
-
-      // Если профиль (botName) отличается от шаблона, передаём tg_profile
-      if (bot.template_id && botName !== bot.template_id) {
-        requestBody.tg_profile = botName;
-      }
 
       const response = await shm_request('shm/v1/telegram/set_webhook', {
         method: 'POST',
@@ -1768,42 +1762,44 @@ https://t.me/Name_bot?start=USER_ID
                 </div>
               </div>
 
-              {/* Статус вебхука */}
-              <div className="pt-2">
-                <div className="flex items-center gap-2 mb-3">
-                  <label className="block text-sm font-medium" style={{ color: 'var(--theme-content-text)' }}>
-                    Статус вебхука
-                  </label>
-                  <span
-                    className="px-2 py-0.5 rounded text-xs font-medium"
+              {/* Статус вебхука - показываем только если выбран шаблон */}
+              {editBotTemplate && (
+                <div className="pt-2">
+                  <div className="flex items-center gap-2 mb-3">
+                    <label className="block text-sm font-medium" style={{ color: 'var(--theme-content-text)' }}>
+                      Статус вебхука
+                    </label>
+                    <span
+                      className="px-2 py-0.5 rounded text-xs font-medium"
+                      style={{
+                        backgroundColor: telegramBots[editingBotName]?.webhook_set ? 'var(--accent-success)' : 'var(--accent-warning)',
+                        color: 'white',
+                      }}
+                    >
+                      {telegramBots[editingBotName]?.webhook_set ? 'Установлен' : 'Не установлен'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setEditBotModalOpen(false);
+                      openWebhookModal(editingBotName, {
+                        token: editBotToken,
+                        secret: editBotSecret,
+                        template_id: editBotTemplate || undefined,
+                        webhook_set: telegramBots[editingBotName]?.webhook_set,
+                      });
+                    }}
+                    className="w-full px-4 py-2 rounded flex items-center justify-center gap-2"
                     style={{
-                      backgroundColor: telegramBots[editingBotName]?.webhook_set ? 'var(--accent-success)' : 'var(--accent-warning)',
-                      color: 'white',
+                      backgroundColor: 'var(--accent-primary)',
+                      color: 'var(--accent-text)',
                     }}
                   >
-                    {telegramBots[editingBotName]?.webhook_set ? 'Установлен' : 'Не установлен'}
-                  </span>
+                    <Bot className="w-4 h-4" />
+                    {telegramBots[editingBotName]?.webhook_set ? 'Переустановить вебхук' : 'Установить вебхук'}
+                  </button>
                 </div>
-                <button
-                  onClick={() => {
-                    setEditBotModalOpen(false);
-                    openWebhookModal(editingBotName, {
-                      token: editBotToken,
-                      secret: editBotSecret,
-                      template_id: editBotTemplate || undefined,
-                      webhook_set: telegramBots[editingBotName]?.webhook_set,
-                    });
-                  }}
-                  className="w-full px-4 py-2 rounded flex items-center justify-center gap-2"
-                  style={{
-                    backgroundColor: 'var(--accent-primary)',
-                    color: 'var(--accent-text)',
-                  }}
-                >
-                  <Bot className="w-4 h-4" />
-                  {telegramBots[editingBotName]?.webhook_set ? 'Переустановить вебхук' : 'Установить вебхук'}
-                </button>
-              </div>
+              )}
 
               {/* Кнопки действий */}
               <div className="flex gap-3 pt-4 border-t" style={{ borderColor: 'var(--theme-card-border)' }}>
