@@ -1528,6 +1528,22 @@ https://t.me/Name_bot?start=USER_ID
                     {bot.description}
                   </p>
                 )}
+                {bot.webhook_set && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-xs" style={{ color: 'var(--theme-content-text-muted)' }}>
+                      Вебхук:
+                    </span>
+                    <span
+                      className="px-2 py-0.5 rounded text-xs font-medium"
+                      style={{
+                        backgroundColor: bot.webhook_set ? 'var(--accent-success)' : 'var(--accent-warning)',
+                        color: 'white',
+                      }}
+                    >
+                      Установлен
+                    </span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
