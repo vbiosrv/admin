@@ -868,6 +868,49 @@ function ConfigurationTabs() {
     }
   };
 
+  const deleteWebhook = async (botName: string, token: string) => {
+    if (!token) {
+      toast.error('Токен бота не указан');
+      return;
+    }
+
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${token}/deleteWebhook`);
+      const data = await response.json();
+
+      if (data.ok) {
+        // Обновляем статус webhook_set в конфигурации
+        try {
+          await saveConfigItem('telegram', {
+            [botName]: {
+              ...telegramBots[botName],
+              webhook_set: false,
+            }
+          });
+          toast.success('Вебхук успешно удален');
+          // Обновляем локальное состояние
+          setTelegramBots(prev => ({
+            ...prev,
+            [botName]: {
+              ...prev[botName],
+              webhook_set: false,
+            },
+          }));
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          toast.error(`Ошибка обновления конфигурации: ${errorMsg}`);
+        }
+      } else {
+        const errorMsg = data.description || JSON.stringify(data, null, 2);
+        toast.error(`Ошибка при удалении вебхука: ${errorMsg}`);
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      toast.error(`Ошибка при удалении вебхука: ${errorMsg}`);
+      console.error(error);
+    }
+  };
+
   const openWebhookModal = (botName: string, bot: TelegramBot) => {
     setWebhookBotName(botName);
     setWebhookBotData(bot);
@@ -1856,25 +1899,40 @@ https://t.me/Name_bot?start=USER_ID
                       {telegramBots[editingBotName]?.webhook_set ? 'Установлен' : 'Не установлен'}
                     </span>
                   </div>
-                  <button
-                    onClick={() => {
-                      setEditBotModalOpen(false);
-                      openWebhookModal(editingBotName, {
-                        token: editBotToken,
-                        secret: editBotSecret,
-                        template_id: editBotTemplate || undefined,
-                        webhook_set: telegramBots[editingBotName]?.webhook_set,
-                      });
-                    }}
-                    className="w-full px-4 py-2 rounded flex items-center justify-center gap-2"
-                    style={{
-                      backgroundColor: 'var(--accent-primary)',
-                      color: 'var(--accent-text)',
-                    }}
-                  >
-                    <Bot className="w-4 h-4" />
-                    {telegramBots[editingBotName]?.webhook_set ? 'Переустановить вебхук' : 'Установить вебхук'}
-                  </button>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => {
+                        setEditBotModalOpen(false);
+                        openWebhookModal(editingBotName, {
+                          token: editBotToken,
+                          secret: editBotSecret,
+                          template_id: editBotTemplate || undefined,
+                          webhook_set: telegramBots[editingBotName]?.webhook_set,
+                        });
+                      }}
+                      className="flex-1 px-4 py-2 rounded flex items-center justify-center gap-2"
+                      style={{
+                        backgroundColor: 'var(--accent-primary)',
+                        color: 'var(--accent-text)',
+                      }}
+                    >
+                      <Bot className="w-4 h-4" />
+                      {telegramBots[editingBotName]?.webhook_set ? 'Переустановить вебхук' : 'Установить вебхук'}
+                    </button>
+                    {telegramBots[editingBotName]?.webhook_set && (
+                      <button
+                        onClick={() => deleteWebhook(editingBotName, editBotToken)}
+                        className="px-4 py-2 rounded flex items-center justify-center gap-2"
+                        style={{
+                          backgroundColor: 'var(--accent-danger)',
+                          color: 'white',
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Удалить вебхук
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
 
