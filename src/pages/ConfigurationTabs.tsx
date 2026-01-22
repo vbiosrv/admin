@@ -782,6 +782,7 @@ function ConfigurationTabs() {
     if (!confirmed) return;
 
     await DeleteConfigItem('telegram', botName);
+    setEditBotModalOpen(false);
   };
 
   const updateBotToken = async (botName: string, token: string) => {
