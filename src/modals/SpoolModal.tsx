@@ -72,7 +72,7 @@ export default function SpoolModal({
   const handlePause = async () => {
     setActionLoading(true);
     try {
-      const res = await shm_request('shm/v1/admin/spool/pause', {
+      const res = await shm_request('shm/v1/admin/spool/manual/pause', {
         method: 'POST',
         body: JSON.stringify(formData),
       });
@@ -90,7 +90,7 @@ export default function SpoolModal({
   const handleResume = async () => {
     setActionLoading(true);
     try {
-      const res = await shm_request('shm/v1/admin/spool/resume', {
+      const res = await shm_request('shm/v1/admin/spool/manual/resume', {
         method: 'POST',
         body: JSON.stringify(formData),
       });
@@ -108,7 +108,7 @@ export default function SpoolModal({
   const handleRetry = async () => {
     setActionLoading(true);
     try {
-      const res = await shm_request('shm/v1/admin/spool/retry', {
+      const res = await shm_request('shm/v1/admin/spool/manual/retry', {
         method: 'POST',
         body: JSON.stringify(formData),
       });
@@ -126,7 +126,7 @@ export default function SpoolModal({
   const handleForceSuccess = async () => {
     setActionLoading(true);
     try {
-      const res = await shm_request('shm/v1/admin/spool/success', {
+      const res = await shm_request('shm/v1/admin/spool/manual/success', {
         method: 'POST',
         body: JSON.stringify(formData),
       });
