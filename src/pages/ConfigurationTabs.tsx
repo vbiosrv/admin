@@ -110,6 +110,7 @@ function ConfigurationTabs() {
   const [billingCurrency, setBillingCurrency] = useState('RUB');
   const [partnerIncomePercent, setPartnerIncomePercent] = useState(20);
   const [allowUserRegisterApi, setAllowUserRegisterApi] = useState(true);
+  const [allowUserAuthApi, setAllowUserAuthApi] = useState(true);
 
   // Брендинг (company)
   const [companyName, setCompanyName] = useState('');
@@ -320,6 +321,7 @@ function ConfigurationTabs() {
           setBillingType(item.value?.type || 'Simpler');
           setPartnerIncomePercent(item.value?.partner?.income_percent || 20);
           setAllowUserRegisterApi(item.value?.allow_user_register_api !== undefined ? item.value.allow_user_register_api : true);
+          setAllowUserAuthApi(item.value?.allow_user_auth_api !== undefined ? item.value.allow_user_auth_api : true);
           setBillingCurrency(item.value?.currency || 'RUB' );
         } else if (item.key === 'company') {
           setCompanyName(item.value?.name || '');
@@ -388,6 +390,7 @@ function ConfigurationTabs() {
       type: billingType,
       partner: { income_percent: partnerIncomePercent },
       allow_user_register_api: allowUserRegisterApi,
+      allow_user_auth_api: allowUserAuthApi,
       currency: billingCurrency,
     });
   };
@@ -1262,19 +1265,6 @@ https://t.me/Name_bot?start=USER_ID
                   style={inputStyles}
                 />
               </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="allowUserRegisterApi"
-                  checked={allowUserRegisterApi}
-                  onChange={(e) => setAllowUserRegisterApi(e.target.checked)}
-                  className="w-4 h-4 rounded"
-                  style={{ accentColor: 'var(--accent-primary)' }}
-                />
-                <label htmlFor="allowUserRegisterApi" className="text-sm font-medium cursor-pointer" style={{ color: 'var(--theme-content-text)' }}>
-                  Разрешена регистрация пользователей через API
-                </label>
-              </div>
               <button
                 onClick={saveBilling}
                 className="px-4 py-2 rounded flex items-center gap-2"
@@ -1544,6 +1534,53 @@ https://t.me/Name_bot?start=USER_ID
                 )}
               </div>
             )}
+          </div>
+
+          {/* Настройки API */}
+          <div className="rounded-lg border p-6" style={cardStyles}>
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--theme-content-text)' }}>
+              <Settings className="w-5 h-5" style={{ color: 'var(--accent-primary)' }} />
+              Настройки API
+            </h3>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="allowUserRegisterApi"
+                  checked={allowUserRegisterApi}
+                  onChange={(e) => setAllowUserRegisterApi(e.target.checked)}
+                  className="w-4 h-4 rounded"
+                  style={{ accentColor: 'var(--accent-primary)' }}
+                />
+                <label htmlFor="allowUserRegisterApi" className="text-sm font-medium cursor-pointer" style={{ color: 'var(--theme-content-text)' }}>
+                  Разрешена регистрация пользователей через API
+                </label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="allowUserAuthApi"
+                  checked={allowUserAuthApi}
+                  onChange={(e) => setAllowUserAuthApi(e.target.checked)}
+                  className="w-4 h-4 rounded"
+                  style={{ accentColor: 'var(--accent-primary)' }}
+                />
+                <label htmlFor="allowUserAuthApi" className="text-sm font-medium cursor-pointer" style={{ color: 'var(--theme-content-text)' }}>
+                  Разрешена аутентификация пользователей через API
+                </label>
+              </div>
+              <button
+                onClick={saveBilling}
+                className="px-4 py-2 rounded flex items-center gap-2"
+                style={{
+                  backgroundColor: 'var(--accent-success)',
+                  color: 'white',
+                }}
+              >
+                <Save className="w-4 h-4" />
+                Сохранить
+              </button>
+            </div>
           </div>
         </div>
       )}
