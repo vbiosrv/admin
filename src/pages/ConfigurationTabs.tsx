@@ -108,6 +108,7 @@ function ConfigurationTabs() {
   const [cliUrl, setCliUrl] = useState('');
   const [billingType, setBillingType] = useState<'Simpler' | 'Honest'>('Simpler');
   const [billingCurrency, setBillingCurrency] = useState('RUB');
+  const [paymentMode, setPaymentMode] = useState<'auto' | 'invoice'>('auto');
   const [partnerIncomePercent, setPartnerIncomePercent] = useState(20);
   const [allowUserRegisterApi, setAllowUserRegisterApi] = useState(true);
   const [allowUserAuthApi, setAllowUserAuthApi] = useState(true);
@@ -323,6 +324,7 @@ function ConfigurationTabs() {
           setAllowUserRegisterApi(item.value?.allow_user_register_api !== undefined ? item.value.allow_user_register_api : true);
           setAllowUserAuthApi(item.value?.allow_user_auth_api !== undefined ? item.value.allow_user_auth_api : true);
           setBillingCurrency(item.value?.currency || 'RUB' );
+          setPaymentMode(item.value?.payment_mode || 'auto');
         } else if (item.key === 'company') {
           setCompanyName(item.value?.name || '');
           setLogoUrl(item.value?.logoUrl || '');
@@ -392,6 +394,7 @@ function ConfigurationTabs() {
       allow_user_register_api: allowUserRegisterApi,
       allow_user_auth_api: allowUserAuthApi,
       currency: billingCurrency,
+      payment_mode: paymentMode,
     });
   };
 
@@ -1235,6 +1238,20 @@ function ConfigurationTabs() {
                       {c.currency} - {c.name}
                     </option>
                   ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--theme-content-text)' }}>
+                  Режим списания средств клиента
+                </label>
+                <select
+                  value={paymentMode}
+                  onChange={(e) => setPaymentMode(e.target.value as 'auto' | 'invoice')}
+                  className="w-full px-3 py-2 rounded border"
+                  style={inputStyles}
+                >
+                  <option value="auto">Автоматически с баланса</option>
+                  <option value="invoice" disabled>Через выставление счета</option>
                 </select>
               </div>
               <div>
