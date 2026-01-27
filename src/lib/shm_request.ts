@@ -162,47 +162,25 @@ export function arrayBufferToBase64url(buffer: ArrayBuffer): string {
   return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 
-export async function checkPasskeyAvailable(login: string): Promise<{ available: boolean; options?: any; passwordAuthDisabled?: boolean }> {
-  try {
-    const response = await fetch(createApiUrl('shm/v1/user/passkey/auth/options/public'), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ login }),
-    });
+export async function authenticateWithPasskey(): Promise<any> {
+  const optionsResponse = await fetch(createApiUrl('shm/v1/user/passkey/auth/options/public'), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
 
-    if (!response.ok) {
-      return { available: false };
-    }
-
-    const data = await response.json();
-    const result = data.data?.[0] || data;
-
-    const passwordAuthDisabled = result.password_auth_disabled === 1;
-
-    if (result.passkey_available === 0 || !result.challenge) {
-      return { available: false, passwordAuthDisabled };
-    }
-
-    return { available: true, options: result, passwordAuthDisabled };
-  } catch {
-    return { available: false };
+  if (!optionsResponse.ok) {
+    throw new Error('Не удалось получить параметры аутентификации');
   }
-}
 
-export async function authenticateWithPasskey(login: string, options: any): Promise<any> {
-  // Преобразуем challenge и credential IDs
-  const challenge = base64urlToArrayBuffer(options.challenge);
+  const optionsData = await optionsResponse.json();
+  const options = optionsData.data?.[0] || optionsData;
 
   const publicKeyCredentialRequestOptions: PublicKeyCredentialRequestOptions = {
-    challenge,
+    challenge: base64urlToArrayBuffer(options.challenge),
     timeout: options.timeout,
     rpId: options.rpId,
-    allowCredentials: options.allowCredentials?.map((cred: any) => ({
-      ...cred,
-      id: base64urlToArrayBuffer(cred.id),
-    })),
     userVerification: options.userVerification as UserVerificationRequirement,
   };
 
@@ -224,7 +202,6 @@ export async function authenticateWithPasskey(login: string, options: any): Prom
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      login,
       credential_id: credential.id,
       rawId: arrayBufferToBase64url(credential.rawId),
       response: {
@@ -264,11 +241,7 @@ export async function authenticateWithPasskey(login: string, options: any): Prom
   }
 
   return {
-    user: {
-      user_id: 0,
-      login,
-      gid: 1
-    },
+    user: { user_id: 0, login: 'unknown', gid: 1 },
     sessionId: result.id
   };
 }

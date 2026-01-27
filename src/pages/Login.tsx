@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogIn, ArrowLeft, Key } from 'lucide-react';
+import { LogIn, Key } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
 import { useBrandingStore } from '../store/brandingStore';
 import { useThemeStore } from '../store/themeStore';
-import { shm_login, checkPasskeyAvailable, authenticateWithPasskey } from '../lib/shm_request';
-
-type LoginStep = 'login' | 'password' | 'otp';
+import { shm_login, authenticateWithPasskey } from '../lib/shm_request';
 
 function Login() {
   const navigate = useNavigate();
@@ -18,49 +16,19 @@ function Login() {
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [otpToken, setOtpToken] = useState('');
-  const [step, setStep] = useState<LoginStep>('login');
-  const [passkeyAvailable, setPasskeyAvailable] = useState(false);
-  const [passkeyOptions, setPasskeyOptions] = useState<any>(null);
-  const [passwordAuthDisabled, setPasswordAuthDisabled] = useState(false);
+  const [showOtp, setShowOtp] = useState(false);
+  const [passkeySupported, setPasskeySupported] = useState(false);
 
   useEffect(() => {
     fetchBranding();
     applyTheme();
+    setPasskeySupported(!!window.PublicKeyCredential);
   }, [fetchBranding, applyTheme]);
 
-  const handleLoginStep = async () => {
-    if (!login.trim()) {
-      toast.error('Введите логин');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // Проверяем доступность passkey
-      const result = await checkPasskeyAvailable(login);
-      setPasskeyAvailable(result.available);
-      setPasskeyOptions(result.options || null);
-      setPasswordAuthDisabled(result.passwordAuthDisabled || false);
-      setStep('password');
-    } catch {
-      setPasskeyAvailable(false);
-      setPasskeyOptions(null);
-      setPasswordAuthDisabled(false);
-      setStep('password');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handlePasskeyLogin = async () => {
-    if (!passkeyOptions) {
-      toast.error('Passkey не доступен для этого пользователя');
-      return;
-    }
-
     setIsLoading(true);
     try {
-      const result = await authenticateWithPasskey(login, passkeyOptions);
+      const result = await authenticateWithPasskey();
       const { user, sessionId } = result;
       setAuth(user, sessionId);
       await refetchBranding();
@@ -80,30 +48,27 @@ function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Если на шаге логина - проверяем passkey
-    if (step === 'login') {
-      await handleLoginStep();
+    if (!login.trim()) {
+      toast.error('Введите логин');
       return;
     }
 
-    // Шаг пароля или OTP
     if (!password) {
       toast.error('Введите пароль');
       return;
     }
 
-    if (step === 'otp' && !otpToken) {
+    if (showOtp && !otpToken) {
       toast.error('Введите OTP код');
       return;
     }
 
     setIsLoading(true);
     try {
-      const result = await shm_login(login, password, step === 'otp' ? otpToken : undefined);
+      const result = await shm_login(login, password, showOtp ? otpToken : undefined);
 
-      // Если требуется OTP, показываем поле для ввода
       if (result.otpRequired) {
-        setStep('otp');
+        setShowOtp(true);
         toast.success('Введите код двухфакторной аутентификации');
         setIsLoading(false);
         return;
@@ -116,25 +81,11 @@ function Login() {
       navigate('/');
     } catch (error: any) {
       toast.error(error.message || 'Ошибка входа');
-      // Если ошибка OTP, очищаем только токен
-      if (step === 'otp') {
+      if (showOtp) {
         setOtpToken('');
       }
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleBack = () => {
-    if (step === 'otp') {
-      setStep('password');
-      setOtpToken('');
-    } else if (step === 'password') {
-      setStep('login');
-      setPassword('');
-      setPasskeyAvailable(false);
-      setPasskeyOptions(null);
-      setPasswordAuthDisabled(false);
     }
   };
 
@@ -169,7 +120,6 @@ function Login() {
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit} autoComplete="on">
           <div className="rounded-md space-y-4">
-            {/* Логин - всегда показываем */}
             <div>
               <label
                 htmlFor="login"
@@ -187,11 +137,11 @@ function Login() {
                 placeholder="login"
                 value={login}
                 onChange={(e) => setLogin(e.target.value)}
-                disabled={step !== 'login'}
+                disabled={showOtp}
               />
             </div>
 
-            <div style={{ display: step === 'login' || passwordAuthDisabled ? 'none' : 'block' }}>
+            <div>
               <label
                 htmlFor="password"
                 className="block text-sm font-medium mb-1"
@@ -208,10 +158,11 @@ function Login() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                disabled={step === 'otp'}
+                disabled={showOtp}
               />
             </div>
-            {step === 'otp' && (
+
+            {showOtp && (
               <div>
                 <label
                   htmlFor="otp"
@@ -236,61 +187,31 @@ function Login() {
           </div>
 
           <div className="flex flex-col gap-3">
-            <div className="flex gap-2">
-              {step !== 'login' && (
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  className="btn-secondary flex justify-center items-center gap-2"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                  Назад
-                </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="btn-primary flex justify-center items-center gap-2"
+              style={{ background: `linear-gradient(135deg, ${colors.primaryColor}, ${colors.primaryColorHover})` }}
+            >
+              {isLoading ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <LogIn className="w-5 h-5" />
+                  Войти
+                </>
               )}
-              {/* Кнопка Войти - скрываем если passwordAuthDisabled */}
-              {!(step === 'password' && passwordAuthDisabled) && (
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="btn-primary flex-1 flex justify-center items-center gap-2"
-                  style={{ background: `linear-gradient(135deg, ${colors.primaryColor}, ${colors.primaryColorHover})` }}
-                >
-                  {isLoading ? (
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <LogIn className="w-5 h-5" />
-                      {step === 'login' ? 'Далее' : 'Войти'}
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
+            </button>
 
-            {/* Кнопка входа с Passkey - показываем только на шаге password */}
-            {step === 'password' && passkeyAvailable && (
+            {passkeySupported && (
               <button
                 type="button"
                 onClick={handlePasskeyLogin}
                 disabled={isLoading}
-                className={`flex-1 flex justify-center items-center gap-2 ${passwordAuthDisabled ? 'btn-primary' : 'btn-success'}`}
-                style={passwordAuthDisabled
-                  ? { background: `linear-gradient(135deg, ${colors.primaryColor}, ${colors.primaryColorHover})` }
-                  : {
-                      borderColor: 'var(--accent-primary)',
-                      backgroundColor: 'transparent',
-                      color: 'var(--accent-primary)',
-                    }
-                }
+                className="btn-secondary flex justify-center items-center gap-2"
               >
-                {isLoading ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <Key className="w-5 h-5" />
-                    Войти с Passkey
-                  </>
-                )}
+                <Key className="w-5 h-5" />
+                Войти с Passkey
               </button>
             )}
           </div>
