@@ -3,6 +3,7 @@ import Modal from '../components/Modal';
 import { Plus, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import TemplateSelect from '../components/TemplateSelect';
+import JsonEditor from '../components/JsonEditor';
 
 interface PromoCreateModalProps {
   open: boolean;
@@ -294,6 +295,21 @@ export default function PromoCreateModal({
             readonly={false}
             className="flex-1"
           />
+        </div>
+
+        <div className="flex items-start gap-3">
+          <label className="w-32 text-sm font-medium shrink-0 pt-2" style={labelStyles}>
+            Настройки
+          </label>
+          <div className="flex-1">
+            <div className="border rounded" style={{ borderColor: inputStyles.borderColor }}>
+              <JsonEditor
+                data={formData.settings || {}}
+                onChange={(value) => handleChange('settings', value)}
+                showInput={true}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </Modal>
