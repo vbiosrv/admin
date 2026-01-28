@@ -116,7 +116,7 @@ export function VersionBadge() {
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                   <div className="flex justify-center gap-4">
                     <a
-                      href="https://docs.myshm.ru/docs/contribution/donation/"
+                      href="https://docs.vbios.ru/"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center gap-2 text-sm transition-colors"
@@ -125,7 +125,7 @@ export function VersionBadge() {
                       Спонсорство
                     </a>
                     <a
-                      href="https://t.me/shm_billing"
+                      href="https://t.me/+YvNidsv9cwQ2MGYy"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center gap-2 text-sm transition-colors"
@@ -134,7 +134,7 @@ export function VersionBadge() {
                       Сообщество
                     </a>
                     <a
-                      href="https://github.com/danuk/shm"
+                      href="https://github.com/vbiosrv/shm"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-4 py-2 bg-cyan-700 hover:bg-cyan-800 text-white rounded-lg flex items-center gap-2 text-sm transition-colors"
