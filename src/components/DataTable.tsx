@@ -53,6 +53,7 @@ interface DataTableProps {
   height?: string;
   storageKey?: string;
   externalFilters?: Record<string, string>;
+  rowClassName?: (row: any) => string;
 }
 
 const LIMITS = [50, 100, 500, 1000, 5000];
@@ -121,7 +122,8 @@ function DataTable({
   sortField,
   sortDirection,
   storageKey,
-  externalFilters
+  externalFilters,
+  rowClassName
 }: DataTableProps) {
   const displayData = data;
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -818,7 +820,7 @@ function DataTable({
               displayData.map((row, idx) => (
                 <tr
                   key={idx}
-                  className={`${onRowClick ? 'cursor-pointer' : ''}`}
+                  className={`${onRowClick ? 'cursor-pointer' : ''} ${rowClassName ? rowClassName(row) : ''}`}
                   style={{
                     borderBottom: '1px solid var(--theme-table-border)',
                     backgroundColor: idx % 2 === 1 ? 'var(--theme-table-row-alt-bg)' : 'transparent',
